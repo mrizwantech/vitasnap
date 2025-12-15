@@ -1,5 +1,6 @@
-package com.example.my_demo_app
+// Deprecated placeholder. MainActivity moved to com.mrizwantech.vitasnap.MainActivity
+package com.mrizwantech.vitasnap
 
-import io.flutter.embedding.android.FlutterActivity
-
-class MainActivity : FlutterActivity()
+// This file intentionally left minimal to avoid duplicate MainActivity definitions.
+// Please remove this file when migrating fully to the new package path.
+ // kept for compatibility; new activity path com.mrizwantech.vitasnap.MainActivity is preferred
