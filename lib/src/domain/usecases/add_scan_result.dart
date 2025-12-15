@@ -5,5 +5,7 @@ class AddScanResult {
   final ScanHistoryRepository _repo;
   AddScanResult(this._repo);
 
-  Future<void> call(ScanResult scan) => _repo.addScan(scan);
+  /// Returns `true` when the added scan replaced an existing entry (duplicate),
+  /// otherwise `false`.
+  Future<bool> call(ScanResult scan) => _repo.addScan(scan);
 }

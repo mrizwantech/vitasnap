@@ -29,7 +29,11 @@ class ScanViewModel extends ChangeNotifier {
 	ScanResult? _lastScan;
 	ScanResult? get lastScan => _lastScan;
 
-	Future<bool> fetchByBarcode(String barcode) async {
+	/// Outcome of a barcode fetch.
+	///
+	/// Returns a ScanResult if successful (not persisted yet), null if failed.
+	/// Call `addToHistory` to persist the scan after user confirms.
+	Future<ScanResult?> fetchByBarcode(String barcode) async {
 		_loading = true;
 		_error = null;
 		notifyListeners();
@@ -38,21 +42,28 @@ class ScanViewModel extends ChangeNotifier {
 			final p = await _getProduct(barcode);
 			developer.log('[ScanViewModel] product received: ${p.name}', name: 'ScanViewModel');
 			_product = p;
-			// compute score and persist
+			// compute score but DON'T persist yet
 			final score = _computeScore(p);
 			final scan = ScanResult(product: p, score: score);
-			await _addScan(scan);
 			_lastScan = scan;
-			return true;
+			return scan;
 		} catch (e) {
 			developer.log('[ScanViewModel] fetch error: $e', name: 'ScanViewModel');
 			_error = e.toString();
 			_product = null;
-			return false;
+			return null;
 		} finally {
 			_loading = false;
 			notifyListeners();
 		}
+	}
+
+	/// Persists a scan result to history. Returns true if it was a duplicate.
+	Future<bool> addToHistory(ScanResult scan) async {
+		final wasDuplicate = await _addScan(scan);
+		_lastScan = scan;
+		notifyListeners();
+		return wasDuplicate;
 	}
 
 	Future<List<ScanResult>> recentScans({int limit = 10}) => _getRecent(limit: limit);

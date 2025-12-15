@@ -1,4 +1,4 @@
-package com.example.my_demo_app
+package com.mrizwantech.vitasnap
 
 import io.flutter.embedding.android.FlutterActivity
 
