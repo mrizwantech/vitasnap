@@ -13,7 +13,9 @@ class ScanHistoryRepositoryImpl implements ScanHistoryRepository {
   Future<void> addScan(ScanResult scan) async {
     final existing = _prefs.getString(_kKey);
     final list = existing != null ? ScanResult.decodeList(existing) : <ScanResult>[];
-    // prepend
+    // Remove any previous entries for the same barcode so we don't show duplicates
+    list.removeWhere((s) => s.product.barcode == scan.product.barcode);
+    // prepend the latest scan
     list.insert(0, scan);
     // cap to 50
     final trimmed = list.take(50).toList();
