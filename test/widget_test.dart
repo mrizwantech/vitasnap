@@ -22,10 +22,10 @@ void main() {
 
     // Verify that HomeDashboard shows greeting
     expect(find.text('Good morning'), findsOneWidget);
-    // Tap the scan FAB and verify navigation works (pushes ScanPage)
-    await tester.tap(find.byType(FloatingActionButton));
+    // Tap the scan FAB (extended one with 'Scan it' label) and verify navigation works
+    await tester.tap(find.text('Scan it'));
     await tester.pumpAndSettle();
-    // After tapping, ScanPage should be pushed; verify we have a Scaffold (scan page uses Scaffold)
+    // After tapping, BarcodeScannerWidget should be pushed; verify we have a Scaffold
     expect(find.byType(Scaffold), findsWidgets);
   });
 }

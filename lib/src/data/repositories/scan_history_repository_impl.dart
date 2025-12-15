@@ -10,16 +10,21 @@ class ScanHistoryRepositoryImpl implements ScanHistoryRepository {
   ScanHistoryRepositoryImpl(this._prefs);
 
   @override
-  Future<void> addScan(ScanResult scan) async {
+  Future<bool> addScan(ScanResult scan) async {
+    // Never add products with invalid/unknown names
+    final name = scan.product.name.trim().toLowerCase();
+    if (name.isEmpty || name == 'unknown') {
+      return false;
+    }
+    
     final existing = _prefs.getString(_kKey);
     final list = existing != null ? ScanResult.decodeList(existing) : <ScanResult>[];
-    // Remove any previous entries for the same barcode so we don't show duplicates
-    list.removeWhere((s) => s.product.barcode == scan.product.barcode);
-    // prepend the latest scan
+    // Allow duplicates - prepend the new scan with current timestamp
     list.insert(0, scan);
     // cap to 50
     final trimmed = list.take(50).toList();
     await _prefs.setString(_kKey, ScanResult.encodeList(trimmed));
+    return true; // Always return true indicating it was added
   }
 
   @override
@@ -27,6 +32,7 @@ class ScanHistoryRepositoryImpl implements ScanHistoryRepository {
     final existing = _prefs.getString(_kKey);
     if (existing == null) return [];
     final list = ScanResult.decodeList(existing);
+    // Return scans as-is - duplicates are allowed (each add creates a new entry with timestamp)
     return list.take(limit).toList();
   }
 }

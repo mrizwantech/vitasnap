@@ -5,6 +5,10 @@ class ComputeHealthScore {
   // Lower sugar, saturated fat, and salt produce higher scores.
   int call(Product p) {
     final n = p.nutriments;
+    // If no nutriment data, return a neutral score rather than perfect 100
+    if (n.isEmpty) {
+      return 50;
+    }
     double sugar = _toDouble(n['sugars_100g']);
     double satFat = _toDouble(n['saturated-fat_100g']);
     double salt = _toDouble(n['salt_100g']);

@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/scan_viewmodel.dart';
+import '../views/product_not_found_page.dart';
+import '../views/product_details_page.dart';
+import 'vitasnap_logo.dart';
 
 /// A simple camera-based barcode scanner that works on mobile platforms.
 ///
@@ -33,12 +37,12 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
     // Show a helpful fallback if camera isn't available (e.g., web/desktop).
     if (kIsWeb || !(defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Scanner')),
+        appBar: AppBar(title: const VitaSnapLogo(fontSize: 20)),
         body: const Center(child: Text('Camera scanning is not supported on web in this demo.')),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('Scanner')),
+      appBar: AppBar(title: const VitaSnapLogo(fontSize: 20)),
       body: Stack(
         children: [
           MobileScanner(
@@ -51,38 +55,53 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
               if (raw == null || raw.isEmpty) return;
 
               _isProcessing = true;
-              // Capture local references before awaiting to avoid depending on
-              // an invalid BuildContext later on.
-              final messenger = ScaffoldMessenger.of(context);
               final navigator = Navigator.of(context);
               final vm = context.read<ScanViewModel>();
+              
               try {
-                final ok = await vm.fetchByBarcode(raw);
-                if (!ok) {
-                  messenger.showSnackBar(SnackBar(content: Text('Scan error: ${vm.error}')));
-                  // allow retrying by resetting the processing flag
-                  _isProcessing = false;
-                } else {
-                  // On success, try to pop. If the route wasn't popped (maybePop
-                  // returns false), stop the camera to avoid duplicate lookups.
-                  bool popped = false;
+                developer.log('[Scanner] fetching barcode: $raw', name: 'vitasnap.scanner');
+                final scanResult = await vm.fetchByBarcode(raw);
+                
+                // Stop camera before navigating
+                try {
+                  await _controller.stop();
+                } catch (_) {}
+                
+                if (scanResult == null) {
+                  // Product not found - navigate to not found page
                   if (mounted) {
-                    try {
-                      popped = await navigator.maybePop();
-                    } catch (_) {
-                      // swallow navigation errors - we don't want the app to crash
+                    navigator.pushReplacement(
+                      MaterialPageRoute(builder: (_) => ProductNotFoundPage(barcode: raw)),
+                    );
+                  }
+                  return;
+                }
+                
+                // Product found - navigate to details page
+                if (mounted) {
+                  final result = await navigator.push<Map<String, dynamic>>(
+                    MaterialPageRoute(
+                      builder: (_) => ProductDetailsPage(scanResult: scanResult),
+                    ),
+                  );
+                  
+                  // If user added the product, save it and return result to home
+                  if (result != null && result['added'] == true) {
+                    await vm.addToHistory(scanResult);
+                    // Pop scanner back to home with the result
+                    if (mounted) {
+                      navigator.pop({'added': true});
+                    }
+                  } else {
+                    // User didn't add - just go back to home
+                    if (mounted) {
+                      navigator.pop();
                     }
                   }
-                  if (!popped) {
-                    // Stop the camera stream; keep _isProcessing true so we don't
-                    // process further detections on this screen.
-                    try {
-                      await _controller.stop();
-                    } catch (_) {}
-                  }
                 }
-              } finally {
-                // only reset when we intend to allow retries (handled above)
+              } catch (e) {
+                developer.log('[Scanner] error: $e', name: 'vitasnap.scanner');
+                _isProcessing = false;
               }
             },
           ),
