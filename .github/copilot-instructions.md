@@ -28,6 +28,7 @@ final svc = NetworkService(client: mockClient);
 
 - **Platform specifics**:
   - Camera barcode scanning uses `mobile_scanner`; `BarcodeScannerWidget` has a web/desktop fallback (see [barcode_scanner_widget.dart](lib/src/presentation/widgets/barcode_scanner_widget.dart)). Tests that require camera should use the text-field lookup flow instead.
+  - If the camera preview is dark on some devices, use the scanner UI's **Torch** and **Switch** controls (in `BarcodeScannerWidget`) to enable flashlight or change cameras for troubleshooting. Also check runtime camera permission and device-specific camera/firmware issues.
 
 - **Linting & style**:
   - Respect `analysis_options.yaml` (includes `package:flutter_lints/flutter.yaml`). Run `flutter analyze` before raising PRs.

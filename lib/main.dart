@@ -1,19 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/core/network/network_service.dart';
 import 'src/data/datasources/open_food_facts_api.dart';
 import 'src/data/repositories/product_repository_impl.dart';
+import 'src/data/repositories/scan_history_repository_impl.dart';
+import 'src/data/repositories/user_repository_impl.dart';
 import 'src/domain/usecases/get_product_by_barcode.dart';
+import 'src/domain/usecases/add_scan_result.dart';
+import 'src/domain/usecases/get_recent_scans.dart';
+import 'src/domain/usecases/compute_health_score.dart';
+import 'src/domain/repositories/scan_history_repository.dart';
+import 'src/domain/repositories/user_repository.dart';
 import 'src/presentation/viewmodels/scan_viewmodel.dart';
-import 'src/presentation/views/scan_page.dart';
+import 'src/presentation/views/home_dashboard.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  runApp(MyApp(prefs: prefs));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final SharedPreferences prefs;
+  const MyApp({super.key, required this.prefs});
 
   // This widget is the root of your application.
   @override
@@ -21,33 +32,24 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'VitaSnap',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const ScanPage(),
+      home: const HomeDashboard(),
       // Register providers here for simple DI
       builder: (context, child) {
         return MultiProvider(
           providers: [
+            Provider<SharedPreferences>(create: (_) => prefs),
             Provider<NetworkService>(create: (_) => NetworkService()),
             Provider(create: (ctx) => OpenFoodFactsApi(ctx.read<NetworkService>())),
             Provider(create: (ctx) => ProductRepositoryImpl(ctx.read<OpenFoodFactsApi>())),
             Provider(create: (ctx) => GetProductByBarcode(ctx.read<ProductRepositoryImpl>())),
-            ChangeNotifierProvider(create: (ctx) => ScanViewModel(ctx.read<GetProductByBarcode>())),
+            Provider<ScanHistoryRepository>(create: (ctx) => ScanHistoryRepositoryImpl(prefs)),
+            Provider<UserRepository>(create: (ctx) => UserRepositoryImpl(prefs)),
+            Provider(create: (ctx) => AddScanResult(ctx.read<ScanHistoryRepository>())),
+            Provider(create: (ctx) => GetRecentScans(ctx.read<ScanHistoryRepository>())),
+            Provider(create: (ctx) => ComputeHealthScore()),
+            ChangeNotifierProvider(create: (ctx) => ScanViewModel(ctx.read<GetProductByBarcode>(), ctx.read<AddScanResult>(), ctx.read<GetRecentScans>(), ctx.read<ComputeHealthScore>())),
           ],
           child: child,
         );

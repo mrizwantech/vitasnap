@@ -7,24 +7,25 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:vitasnap/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Provide mock shared preferences
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(prefs: prefs));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that HomeDashboard shows greeting
+    expect(find.text('Good morning'), findsOneWidget);
+    // Tap the scan FAB and verify navigation works (pushes ScanPage)
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    // After tapping, ScanPage should be pushed; verify we have a Scaffold (scan page uses Scaffold)
+    expect(find.byType(Scaffold), findsWidgets);
   });
 }

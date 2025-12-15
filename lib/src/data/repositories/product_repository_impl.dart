@@ -2,6 +2,7 @@
 ///
 /// Coordinates network calls, maps DTOs to domain entities.
 library;
+import 'dart:developer' as developer;
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/product_repository.dart';
 import '../datasources/open_food_facts_api.dart';
@@ -14,6 +15,7 @@ class ProductRepositoryImpl implements ProductRepository {
 	@override
 	Future<Product> getProductByBarcode(String barcode) async {
 		final json = await api.fetchProductByBarcode(barcode);
+		developer.log('[ProductRepositoryImpl] raw json status: ${json['status']} for code $barcode', name: 'ProductRepositoryImpl');
 		final status = json['status'] ?? 0;
 		if (status == 0) {
 			throw Exception('Product not found');
