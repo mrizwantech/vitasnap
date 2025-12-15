@@ -25,7 +25,7 @@ class _ScanPageState extends State<ScanPage> {
 			appBar: AppBar(title: const Text('Scan / Search')),
 			body: Padding(
 				padding: const EdgeInsets.all(16.0),
-				child: Column(
+			child: SingleChildScrollView(child: Column(
 					crossAxisAlignment: CrossAxisAlignment.stretch,
 					children: [
 						TextField(
@@ -71,6 +71,7 @@ class _ScanPageState extends State<ScanPage> {
 						]
 					],
 				),
+			),
 			),
 		);
 	}
