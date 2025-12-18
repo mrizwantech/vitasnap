@@ -12,7 +12,7 @@ class ProductNotFoundPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF6FBF8),
       appBar: AppBar(
-        title: const VitaSnapLogo(fontSize: 20),
+        title: const VitaSnapLogo(fontSize: 20, showTagline: true),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,

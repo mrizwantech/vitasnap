@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/strings.dart';
+import '../../presentation/widgets/vitasnap_logo.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
@@ -11,7 +12,8 @@ class PrivacyPolicyPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(AppStrings.privacyPolicy),
+        title: const VitaSnapLogo(fontSize: 20, showTagline: true),
+        centerTitle: true,
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,

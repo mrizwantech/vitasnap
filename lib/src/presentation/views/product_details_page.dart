@@ -3,14 +3,21 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/services/dietary_preferences_service.dart';
+import '../../core/services/favorites_service.dart';
+import '../../core/services/health_conditions_service.dart';
 import '../../domain/entities/scan_result.dart';
 import '../widgets/vitasnap_logo.dart';
 
 /// Product details page showing nutritional info with option to add or share.
 class ProductDetailsPage extends StatefulWidget {
   final ScanResult scanResult;
+  final bool showDietaryAlert;
 
-  const ProductDetailsPage({super.key, required this.scanResult});
+  const ProductDetailsPage({
+    super.key,
+    required this.scanResult,
+    this.showDietaryAlert = false,
+  });
 
   @override
   State<ProductDetailsPage> createState() => _ProductDetailsPageState();
@@ -22,7 +29,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_alertShown) {
+    if (!_alertShown && widget.showDietaryAlert) {
       _alertShown = true;
       // Check dietary preferences after the widget is built
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -198,10 +205,19 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           )
         : (matches: <DietaryRestriction>[], violations: <DietaryRestriction>[]);
 
+    // Check health conditions
+    final healthService = context.watch<HealthConditionsService>();
+    final healthResult = healthService.hasConditions
+        ? healthService.analyzeProduct(
+            nutriments: product.nutriments,
+            ingredients: product.ingredients,
+          )
+        : null;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6FBF8),
       appBar: AppBar(
-        title: const VitaSnapLogo(fontSize: 20),
+        title: const VitaSnapLogo(fontSize: 20, showTagline: true),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -218,6 +234,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   matches: dietaryResult.matches,
                   violations: dietaryResult.violations,
                 ),
+                const SizedBox(height: 16),
+              ],
+              // Health conditions analysis (shows for all products when user has conditions)
+              if (healthResult != null) ...[
+                _HealthWarningsBanner(result: healthResult),
                 const SizedBox(height: 16),
               ],
               // Product card
@@ -581,6 +602,40 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Favorite button
+              Expanded(
+                flex: 1,
+                child: Consumer<FavoritesService>(
+                  builder: (context, favoritesService, _) {
+                    final isFavorite = favoritesService.isFavorite(product.barcode);
+                    return ElevatedButton(
+                      onPressed: () {
+                        favoritesService.toggleFavorite(widget.scanResult);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isFavorite ? 'Removed from favorites' : 'Added to favorites',
+                            ),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isFavorite ? Colors.red : Colors.grey.shade200,
+                        foregroundColor: isFavorite ? Colors.white : Colors.grey.shade700,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -965,6 +1020,416 @@ class _DietaryInfoBanner extends StatelessWidget {
               )).toList(),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Banner showing health condition warnings for the product
+class _HealthWarningsBanner extends StatelessWidget {
+  final HealthAnalysisResult result;
+
+  const _HealthWarningsBanner({required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasWarnings = result.hasWarnings;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: result.overallSeverity.color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: result.overallSeverity.color.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: result.overallSeverity.color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  result.overallSeverity.icon,
+                  color: result.overallSeverity.color,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Health Analysis',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: result.overallSeverity.color,
+                      ),
+                    ),
+                    Text(
+                      result.summary,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          // Show safe message or warnings
+          if (!hasWarnings) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.thumb_up_alt_outlined,
+                    color: Colors.green.shade600,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Based on your health conditions, this product appears to be a good choice for you.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 16),
+            
+            // Warning cards
+            ...result.warnings.map((warning) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _WarningCard(warning: warning),
+            )),
+            
+            // Tap to see more
+            Center(
+              child: TextButton.icon(
+                onPressed: () => _showDetailedAnalysis(context),
+                icon: const Icon(Icons.info_outline, size: 18),
+                label: const Text('View Full Analysis'),
+                style: TextButton.styleFrom(
+                  foregroundColor: result.overallSeverity.color,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showDetailedAnalysis(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Title
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.health_and_safety,
+                      color: result.overallSeverity.color,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Health Analysis Details',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: result.overallSeverity.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        result.overallSeverity.label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: result.overallSeverity.color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: result.warnings.length,
+                  itemBuilder: (context, index) {
+                    final warning = result.warnings[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _DetailedWarningCard(warning: warning),
+                    );
+                  },
+                ),
+              ),
+              // Disclaimer
+              Container(
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.grey.shade600, size: 20),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'This is general guidance only. Consult your healthcare provider for personalized advice.',
+                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WarningCard extends StatelessWidget {
+  final HealthWarning warning;
+
+  const _WarningCard({required this.warning});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: warning.severity.color.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: warning.condition.color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              warning.condition.icon,
+              color: warning.condition.color,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        warning.title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: warning.severity.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        warning.severity.label,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: warning.severity.color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (warning.nutrientValue != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    warning.nutrientValue!,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailedWarningCard extends StatelessWidget {
+  final HealthWarning warning;
+
+  const _DetailedWarningCard({required this.warning});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: warning.severity.color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: warning.severity.color.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: warning.condition.color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  warning.condition.icon,
+                  color: warning.condition.color,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      warning.title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      warning.condition.displayName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: warning.condition.color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: warning.severity.color,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  warning.severity.icon,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ],
+          ),
+          if (warning.nutrientValue != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                warning.nutrientValue!,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Text(
+            warning.explanation,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade800,
+              height: 1.4,
+            ),
+          ),
         ],
       ),
     );

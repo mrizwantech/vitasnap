@@ -4,11 +4,14 @@ import '../../core/services/auth_service.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/dietary_preferences_service.dart';
 import '../../core/services/cloud_sync_service.dart';
+import '../../core/services/health_conditions_service.dart';
 import '../../core/strings.dart';
 import '../../domain/repositories/scan_history_repository.dart';
 import '../../data/repositories/scan_history_repository_impl.dart';
 import '../settings/dietary_preferences_page.dart';
 import '../settings/privacy_policy_page.dart';
+import '../../presentation/views/health_conditions_page.dart';
+import '../../presentation/widgets/vitasnap_logo.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -24,7 +27,8 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(AppStrings.profile),
+        title: const VitaSnapLogo(fontSize: 20, showTagline: true),
+        centerTitle: true,
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
@@ -114,6 +118,8 @@ class ProfilePage extends StatelessWidget {
                       );
                     },
                   ),
+                  _divider(),
+                  _HealthConditionsTile(primaryColor: primaryColor),
                   _divider(),
                   _SettingsTile(
                     icon: Icons.notifications_outlined,
@@ -494,6 +500,58 @@ class _ClearHistoryTile extends StatelessWidget {
         );
       }
     }
+  }
+}
+
+class _HealthConditionsTile extends StatelessWidget {
+  final Color primaryColor;
+  const _HealthConditionsTile({required this.primaryColor});
+
+  @override
+  Widget build(BuildContext context) {
+    final healthService = context.watch<HealthConditionsService>();
+    final conditionCount = healthService.selectedConditions.length;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          Icons.health_and_safety,
+          color: Colors.red.shade400,
+          size: 20,
+        ),
+      ),
+      title: const Text(
+        'Health Conditions',
+        style: TextStyle(fontWeight: FontWeight.w500),
+      ),
+      subtitle: Text(
+        conditionCount == 0
+            ? 'Set your health conditions'
+            : '$conditionCount condition${conditionCount == 1 ? '' : 's'} selected',
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+      ),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const HealthConditionsPage(),
+          ),
+        );
+      },
+    );
   }
 }
 

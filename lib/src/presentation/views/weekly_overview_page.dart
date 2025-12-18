@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/scan_result.dart';
 import '../../domain/usecases/compute_weekly_stats.dart';
+import '../widgets/vitasnap_logo.dart';
 
 /// Weekly Overview page showing detailed nutritional insights.
 class WeeklyOverviewPage extends StatelessWidget {
@@ -48,10 +49,7 @@ class WeeklyOverviewPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Weekly Overview',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
-        ),
+        title: const VitaSnapLogo(fontSize: 20, showTagline: true),
         centerTitle: true,
       ),
       body: SingleChildScrollView(

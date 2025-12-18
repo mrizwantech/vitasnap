@@ -37,12 +37,12 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
     // Show a helpful fallback if camera isn't available (e.g., web/desktop).
     if (kIsWeb || !(defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)) {
       return Scaffold(
-        appBar: AppBar(title: const VitaSnapLogo(fontSize: 20)),
+        appBar: AppBar(title: const VitaSnapLogo(fontSize: 20, showTagline: true)),
         body: const Center(child: Text('Camera scanning is not supported on web in this demo.')),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const VitaSnapLogo(fontSize: 20)),
+      appBar: AppBar(title: const VitaSnapLogo(fontSize: 20, showTagline: true)),
       body: Stack(
         children: [
           MobileScanner(
@@ -81,7 +81,7 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
                 if (mounted) {
                   final result = await navigator.push<Map<String, dynamic>>(
                     MaterialPageRoute(
-                      builder: (_) => ProductDetailsPage(scanResult: scanResult),
+                      builder: (_) => ProductDetailsPage(scanResult: scanResult, showDietaryAlert: true),
                     ),
                   );
                   

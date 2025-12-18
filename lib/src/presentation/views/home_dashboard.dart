@@ -371,33 +371,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
           ),
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(icon: Icons.home, label: AppStrings.home, active: true),
-              _NavItem(icon: Icons.bar_chart, label: AppStrings.stats),
-              const SizedBox(width: 64), // space for FAB
-              _NavItem(icon: Icons.dynamic_feed, label: AppStrings.feed),
-              _NavItem(
-                icon: Icons.person,
-                label: AppStrings.profile,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ProfilePage()),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: _showSearch
           ? // Search mode: show search field + search button, hide scan
             Container(
@@ -660,35 +634,5 @@ class _WeeklyStatsCard extends StatelessWidget {
       default:
         return Colors.grey;
     }
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.active = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? const Color(0xFF00C17B) : Colors.grey.shade600;
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: color, fontSize: 12)),
-        ],
-      ),
-    );
   }
 }
