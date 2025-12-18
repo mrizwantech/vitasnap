@@ -1,10 +1,17 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'src/core/network/network_service.dart';
 import 'src/core/services/auth_service.dart';
+import 'src/core/services/theme_service.dart';
+import 'src/core/services/dietary_preferences_service.dart';
+import 'src/core/services/cloud_sync_service.dart';
 import 'src/data/datasources/open_food_facts_api.dart';
 import 'src/data/repositories/product_repository_impl.dart';
 import 'src/data/repositories/scan_history_repository_impl.dart';
@@ -19,15 +26,30 @@ import 'src/domain/repositories/user_repository.dart';
 import 'src/presentation/viewmodels/scan_viewmodel.dart';
 import 'src/presentation/views/home_dashboard.dart';
 import 'src/features/auth/login_page.dart';
+import 'src/features/onboarding/onboarding_page.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Use runZonedGuarded to catch all errors
+  runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp();
+    // Initialize Firebase
+    await Firebase.initializeApp();
 
-  final prefs = await SharedPreferences.getInstance();
-  runApp(MyApp(prefs: prefs));
+    // Initialize Crashlytics (only in release mode)
+    if (!kDebugMode) {
+      // Pass all uncaught "fatal" errors from the framework to Crashlytics
+      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    runApp(MyApp(prefs: prefs));
+  }, (error, stack) {
+    // Pass all uncaught asynchronous errors to Crashlytics
+    if (!kDebugMode) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    }
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -72,30 +94,130 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (ctx) => ThemeService(ctx.read<SharedPreferences>())),
+        ChangeNotifierProvider(create: (ctx) => DietaryPreferencesService(ctx.read<SharedPreferences>())),
+        ChangeNotifierProvider(create: (ctx) => CloudSyncService(ctx.read<SharedPreferences>())),
       ],
-      child: MaterialApp(
-        title: 'VitaSnap',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00C17B)),
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, child) => MaterialApp(
+          title: 'VitaSnap',
+          debugShowCheckedModeBanner: false,
+          themeMode: themeService.flutterThemeMode,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF00C17B),
+              brightness: Brightness.light,
+            ),
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF00C17B),
+              brightness: Brightness.dark,
+            ),
+          ),
+          home: const AppWrapper(),
         ),
-        home: const AuthWrapper(),
       ),
     );
   }
 }
 
+/// Top-level wrapper that handles onboarding flow
+class AppWrapper extends StatefulWidget {
+  const AppWrapper({super.key});
+
+  @override
+  State<AppWrapper> createState() => _AppWrapperState();
+}
+
+class _AppWrapperState extends State<AppWrapper> {
+  bool? _onboardingComplete;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final complete = await OnboardingPage.isComplete();
+    setState(() {
+      _onboardingComplete = complete;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Show loading while checking onboarding status
+    if (_onboardingComplete == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Show onboarding for first-time users
+    if (!_onboardingComplete!) {
+      return OnboardingPage(
+        onComplete: () {
+          setState(() {
+            _onboardingComplete = true;
+          });
+        },
+      );
+    }
+
+    // Show auth flow for returning users
+    return const AuthWrapper();
+  }
+}
+
 /// Wrapper widget that shows login or home based on auth state
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  String? _lastUserId;
+
+  void _updateUserServices(String? userId) {
+    // Set user ID on scan history repository
+    final scanHistoryRepo = context.read<ScanHistoryRepository>();
+    if (scanHistoryRepo is ScanHistoryRepositoryImpl) {
+      scanHistoryRepo.setUserId(userId);
+    }
+    // Set user ID on dietary preferences service
+    final dietaryPrefsService = context.read<DietaryPreferencesService>();
+    dietaryPrefsService.setUserId(userId);
+    // Set user ID on cloud sync service
+    final cloudSyncService = context.read<CloudSyncService>();
+    cloudSyncService.setUserId(userId);
+    // Wire up cloud sync to scan viewmodel for auto-sync
+    context.read<ScanViewModel>().setCloudSyncService(cloudSyncService);
+    // Wire up cloud sync to dietary preferences for auto-sync
+    dietaryPrefsService.setCloudSyncService(cloudSyncService);
+  }
 
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
+    final currentUserId = authService.user?.uid;
+
+    // Update user-specific data when user changes
+    if (currentUserId != _lastUserId) {
+      _lastUserId = currentUserId;
+      // Schedule service updates after build completes
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateUserServices(currentUserId);
+      });
+    }
 
     // Show home if authenticated, login if not
     if (authService.isAuthenticated) {
-      return const HomeDashboard();
+      // Use key to force rebuild when user changes
+      return HomeDashboard(key: ValueKey(currentUserId));
     } else {
       return const LoginPage();
     }

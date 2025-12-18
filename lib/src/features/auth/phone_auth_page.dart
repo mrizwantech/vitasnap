@@ -157,6 +157,32 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
               const SizedBox(height: 40),
 
               if (!_codeSent) ...[
+                // Phone input help text
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Include country code (e.g., +1 for US, +44 for UK)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // Phone input
                 TextFormField(
                   controller: _phoneController,
@@ -170,6 +196,7 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
                     ),
                     filled: true,
                     fillColor: Colors.white,
+                    helperText: 'Example: +14155552671',
                   ),
                 ),
                 const SizedBox(height: 24),

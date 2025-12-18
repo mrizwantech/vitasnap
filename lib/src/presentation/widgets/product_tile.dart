@@ -145,6 +145,7 @@ class ProductTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final dietaryLabels = parseDietaryLabels(labels);
     return Material(
       color: Colors.transparent,
@@ -154,9 +155,9 @@ class ProductTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: _gradeBgColor,
+            color: isDark ? Theme.of(context).cardColor : _gradeBgColor,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
+            boxShadow: isDark ? null : [
               BoxShadow(
                 color: Color.fromRGBO(0, 0, 0, 0.04),
                 blurRadius: 8,
@@ -171,7 +172,7 @@ class ProductTile extends StatelessWidget {
                 width: 52,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  color: _gradeColor.withValues(alpha: 0.15),
+                  color: _gradeColor.withValues(alpha: isDark ? 0.25 : 0.15),
                 ),
                 alignment: Alignment.center,
                 child: Text(

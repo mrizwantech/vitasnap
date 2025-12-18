@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/theme_service.dart';
+import '../../core/services/dietary_preferences_service.dart';
+import '../../core/services/cloud_sync_service.dart';
 import '../../core/strings.dart';
+import '../../domain/repositories/scan_history_repository.dart';
+import '../../data/repositories/scan_history_repository_impl.dart';
+import '../settings/dietary_preferences_page.dart';
+import '../settings/privacy_policy_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -9,15 +16,17 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
+    final themeService = context.watch<ThemeService>();
     final user = authService.user;
     final primaryColor = const Color(0xFF1B8A4E);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(AppStrings.profile),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.grey.shade800,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -28,9 +37,9 @@ class ProfilePage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
+                boxShadow: isDark ? null : [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
@@ -82,28 +91,26 @@ class ProfilePage extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Settings section
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+            // App Settings section
+            _SectionTitle(title: AppStrings.settings, isDark: isDark),
+            const SizedBox(height: 12),
+            _SettingsCard(
+              isDark: isDark,
+              children: [
+                  _ThemeTile(
+                    themeService: themeService,
+                    primaryColor: primaryColor,
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
+                  _divider(),
                   _SettingsTile(
-                    icon: Icons.person_outline,
-                    title: AppStrings.editProfile,
+                    icon: Icons.food_bank_outlined,
+                    title: AppStrings.dietaryPreferences,
                     onTap: () {
-                      // TODO: Implement edit profile
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text(AppStrings.comingSoon)),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DietaryPreferencesPage(),
+                        ),
                       );
                     },
                   ),
@@ -117,17 +124,42 @@ class ProfilePage extends StatelessWidget {
                       );
                     },
                   ),
+                ],
+            ),
+            const SizedBox(height: 24),
+
+            // Data & Privacy section
+            _SectionTitle(title: AppStrings.dataAndPrivacy, isDark: isDark),
+            const SizedBox(height: 12),
+            _SettingsCard(
+              isDark: isDark,
+              children: [
+                  _CloudSyncTile(primaryColor: primaryColor),
+                  _divider(),
+                  _ClearHistoryTile(primaryColor: primaryColor),
                   _divider(),
                   _SettingsTile(
-                    icon: Icons.food_bank_outlined,
-                    title: AppStrings.dietaryPreferences,
+                    icon: Icons.privacy_tip_outlined,
+                    title: AppStrings.privacyPolicy,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text(AppStrings.comingSoon)),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PrivacyPolicyPage(),
+                        ),
                       );
                     },
                   ),
-                  _divider(),
+                ],
+            ),
+            const SizedBox(height: 24),
+
+            // Support section
+            _SectionTitle(title: AppStrings.about, isDark: isDark),
+            const SizedBox(height: 12),
+            _SettingsCard(
+              isDark: isDark,
+              children: [
                   _SettingsTile(
                     icon: Icons.help_outline,
                     title: AppStrings.helpAndSupport,
@@ -137,18 +169,7 @@ class ProfilePage extends StatelessWidget {
                       );
                     },
                   ),
-                  _divider(),
-                  _SettingsTile(
-                    icon: Icons.privacy_tip_outlined,
-                    title: AppStrings.privacyPolicy,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text(AppStrings.comingSoon)),
-                      );
-                    },
-                  ),
                 ],
-              ),
             ),
             const SizedBox(height: 24),
 
@@ -179,8 +200,12 @@ class ProfilePage extends StatelessWidget {
                     ),
                   );
 
-                  if (confirm == true) {
+                  if (confirm == true && context.mounted) {
                     await authService.signOut();
+                    // Pop all routes and go back to root (AuthWrapper will show login)
+                    if (context.mounted) {
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    }
                   }
                 },
                 icon: const Icon(Icons.logout, color: Colors.red),
@@ -247,5 +272,341 @@ class _SettingsTile extends StatelessWidget {
       trailing: Icon(Icons.chevron_right, color: Colors.grey.shade400),
       onTap: onTap,
     );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final bool isDark;
+  const _SectionTitle({required this.title, this.isDark = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+  final bool isDark;
+  const _SettingsCard({required this.children, this.isDark = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: isDark ? null : [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _ThemeTile extends StatelessWidget {
+  final ThemeService themeService;
+  final Color primaryColor;
+
+  const _ThemeTile({
+    required this.themeService,
+    required this.primaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        themeService.getThemeModeIcon(themeService.themeMode),
+        color: Colors.grey.shade700,
+      ),
+      title: const Text(AppStrings.theme),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          themeService.getThemeModeName(themeService.themeMode),
+          style: TextStyle(
+            color: Colors.grey.shade700,
+            fontSize: 14,
+          ),
+        ),
+      ),
+      onTap: () => _showThemeDialog(context),
+    );
+  }
+
+  void _showThemeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(AppStrings.theme),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: AppThemeMode.values.map((mode) {
+            final isSelected = themeService.themeMode == mode;
+            return ListTile(
+              leading: Icon(
+                themeService.getThemeModeIcon(mode),
+                color: isSelected ? primaryColor : Colors.grey.shade600,
+              ),
+              title: Text(
+                themeService.getThemeModeName(mode),
+                style: TextStyle(
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected ? primaryColor : null,
+                ),
+              ),
+              trailing: isSelected
+                  ? Icon(Icons.check, color: primaryColor)
+                  : null,
+              onTap: () {
+                themeService.setThemeMode(mode);
+                Navigator.pop(context);
+              },
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
+class _ClearHistoryTile extends StatelessWidget {
+  final Color primaryColor;
+
+  const _ClearHistoryTile({required this.primaryColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(Icons.delete_outline, color: Colors.grey.shade700),
+      title: const Text(AppStrings.clearHistory),
+      trailing: Icon(Icons.chevron_right, color: Colors.grey.shade400),
+      onTap: () => _showClearHistoryDialog(context),
+    );
+  }
+
+  Future<void> _showClearHistoryDialog(BuildContext context) async {
+    final historyRepo = context.read<ScanHistoryRepository>();
+    final scanCount = await historyRepo.getScanCount();
+
+    if (scanCount == 0) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(AppStrings.noHistoryToClear)),
+        );
+      }
+      return;
+    }
+
+    if (!context.mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.shade100,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.delete_forever,
+            color: Colors.red.shade600,
+            size: 32,
+          ),
+        ),
+        title: const Text(AppStrings.clearHistoryConfirmTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              AppStrings.clearHistoryConfirmMessage,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history, color: Colors.grey.shade600, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$scanCount ${scanCount == 1 ? 'scan' : 'scans'} will be deleted',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(AppStrings.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete All'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      await historyRepo.clearHistory();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(AppStrings.historyCleared)),
+        );
+      }
+    }
+  }
+}
+
+class _CloudSyncTile extends StatelessWidget {
+  final Color primaryColor;
+  const _CloudSyncTile({required this.primaryColor});
+
+  @override
+  Widget build(BuildContext context) {
+    final cloudSync = context.watch<CloudSyncService>();
+    
+    return ListTile(
+      leading: Icon(
+        cloudSync.isEnabled ? Icons.cloud_done : Icons.cloud_outlined,
+        color: cloudSync.isEnabled ? primaryColor : Colors.grey.shade700,
+      ),
+      title: const Text('Cloud Backup'),
+      subtitle: cloudSync.isEnabled
+          ? Text(
+              cloudSync.isSyncing 
+                  ? 'Syncing...' 
+                  : 'Last sync: ${cloudSync.lastSyncDisplay}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            )
+          : null,
+      trailing: Switch(
+        value: cloudSync.isEnabled,
+        activeColor: primaryColor,
+        onChanged: (value) => _toggleCloudSync(context, value),
+      ),
+    );
+  }
+
+  Future<void> _toggleCloudSync(BuildContext context, bool enable) async {
+    final cloudSync = context.read<CloudSyncService>();
+    
+    if (enable) {
+      // Show confirmation dialog
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          icon: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.cloud_upload,
+              color: primaryColor,
+              size: 32,
+            ),
+          ),
+          title: const Text('Enable Cloud Backup?'),
+          content: const Text(
+            'Your scan history and dietary preferences will be securely backed up to the cloud. This allows you to access your data across devices.',
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Enable'),
+            ),
+          ],
+        ),
+      );
+      
+      if (confirm == true) {
+        // Get current data to sync
+        final scanHistoryRepo = context.read<ScanHistoryRepository>();
+        final dietaryPrefs = context.read<DietaryPreferencesService>();
+        
+        List<Map<String, dynamic>>? scanHistory;
+        if (scanHistoryRepo is ScanHistoryRepositoryImpl) {
+          final scans = await scanHistoryRepo.getRecentScans();
+          scanHistory = scans.map((s) => s.toJson()).toList();
+        }
+        
+        await cloudSync.setEnabled(true);
+        
+        // Sync data to cloud
+        await cloudSync.syncToCloud(
+          scanHistory: scanHistory,
+          dietaryPreferences: dietaryPrefs.selectedRestrictions,
+        );
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cloud backup enabled and data synced!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } else {
+      await cloudSync.setEnabled(false);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cloud backup disabled')),
+        );
+      }
+    }
   }
 }

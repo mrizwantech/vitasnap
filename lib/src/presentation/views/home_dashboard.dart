@@ -25,7 +25,7 @@ class HomeDashboard extends StatefulWidget {
   State<HomeDashboard> createState() => _HomeDashboardState();
 }
 
-class _HomeDashboardState extends State<HomeDashboard> {
+class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserver {
   late Future<List<ScanResult>> _scansFuture;
   String _userName = AppStrings.defaultUserName;
   bool _showSearch = false;
@@ -33,6 +33,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
@@ -46,6 +47,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Initialize with empty future, then load after first frame
     _scansFuture = Future.value([]);
 
@@ -53,6 +55,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
       _refreshScans();
       _loadUserName();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Refresh when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      _refreshScans();
+    }
   }
 
   void _loadUserName() {
@@ -203,8 +213,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF6FBF8),
+      backgroundColor: isDark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF6FBF8),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
@@ -230,14 +241,21 @@ class _HomeDashboardState extends State<HomeDashboard> {
                             // TODO: Notifications
                           },
                           icon: const Icon(Icons.notifications_outlined),
-                          color: Colors.grey.shade700,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
                         ),
                         IconButton(
-                          onPressed: () {
-                            // TODO: Settings page
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProfilePage(),
+                              ),
+                            );
+                            // Refresh scans when coming back from profile/settings
+                            _refreshScans();
                           },
                           icon: const Icon(Icons.settings_outlined),
-                          color: Colors.grey.shade700,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
                         ),
                       ],
                     ),
@@ -250,17 +268,17 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   Expanded(
                     child: RichText(
                       text: TextSpan(
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: isDark ? Colors.white : Colors.black87,
                         ),
                         children: [
                           TextSpan(
                             text: '${_getGreeting()}, ',
                             style: TextStyle(
                               fontWeight: FontWeight.normal,
-                              color: Colors.grey.shade600,
+                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                             ),
                           ),
                           TextSpan(text: _userName),
@@ -270,7 +288,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   ),
                   GestureDetector(
                     onTap: _editName,
-                    child: const Icon(Icons.edit, size: 18, color: Colors.grey),
+                    child: Icon(Icons.edit, size: 18, color: isDark ? Colors.grey.shade400 : Colors.grey),
                   ),
                 ],
               ),

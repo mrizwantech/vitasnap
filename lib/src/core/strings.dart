@@ -98,6 +98,20 @@ class AppStrings {
   static const signOutConfirmTitle = 'Sign Out';
   static const signOutConfirmMessage = 'Are you sure you want to sign out?';
 
+  // ==================== Settings ====================
+  static const settings = 'Settings';
+  static const theme = 'Theme';
+  static const themeLight = 'Light';
+  static const themeDark = 'Dark';
+  static const themeSystem = 'System';
+  static const clearHistory = 'Clear History';
+  static const clearHistoryConfirmTitle = 'Clear All History?';
+  static const clearHistoryConfirmMessage = 'This will permanently delete all your scanned products and you will be starting over from scratch. This action cannot be undone.';
+  static const historyCleared = 'All scan history has been cleared';
+  static const noHistoryToClear = 'No scan history to clear';
+  static const dataAndPrivacy = 'Data & Privacy';
+  static const about = 'About';
+
   // ==================== Product ====================
   static const productNotFound = 'Product Not Found';
   static const unknownBrand = 'Unknown brand';

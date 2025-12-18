@@ -9,13 +9,21 @@ import '../../domain/usecases/add_scan_result.dart';
 import '../../domain/usecases/get_recent_scans.dart';
 import '../../domain/usecases/compute_health_score.dart';
 import '../../domain/entities/scan_result.dart';
+import '../../core/services/cloud_sync_service.dart';
 
 class ScanViewModel extends ChangeNotifier {
 	final GetProductByBarcode _getProduct;
 	final AddScanResult _addScan;
 	final GetRecentScans _getRecent;
 	final ComputeHealthScore _computeScore;
+	CloudSyncService? _cloudSyncService;
+	
 	ScanViewModel(this._getProduct, this._addScan, this._getRecent, this._computeScore);
+
+	/// Set the cloud sync service for auto-syncing scans
+	void setCloudSyncService(CloudSyncService service) {
+		_cloudSyncService = service;
+	}
 
 	bool _loading = false;
 	bool get loading => _loading;
@@ -63,7 +71,24 @@ class ScanViewModel extends ChangeNotifier {
 		final wasDuplicate = await _addScan(scan);
 		_lastScan = scan;
 		notifyListeners();
+		
+		// Auto-sync to cloud if enabled
+		_syncToCloudIfEnabled();
+		
 		return wasDuplicate;
+	}
+
+	/// Sync scan history to cloud if cloud sync is enabled
+	Future<void> _syncToCloudIfEnabled() async {
+		if (_cloudSyncService == null || !_cloudSyncService!.isEnabled) return;
+		
+		try {
+			final scans = await _getRecent(limit: 100);
+			final scanHistory = scans.map((s) => s.toJson()).toList();
+			await _cloudSyncService!.syncScanHistory(scanHistory);
+		} catch (e) {
+			developer.log('[ScanViewModel] Cloud sync error: $e', name: 'ScanViewModel');
+		}
 	}
 
 	Future<List<ScanResult>> recentScans({int limit = 10}) => _getRecent(limit: limit);

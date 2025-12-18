@@ -7,4 +7,10 @@ abstract class ScanHistoryRepository {
   /// (i.e. this product already existed in history), otherwise `false`.
   Future<bool> addScan(ScanResult scan);
   Future<List<ScanResult>> getRecentScans({int limit = 10});
+  
+  /// Clears all scan history
+  Future<void> clearHistory();
+  
+  /// Gets the total count of scans in history
+  Future<int> getScanCount();
 }

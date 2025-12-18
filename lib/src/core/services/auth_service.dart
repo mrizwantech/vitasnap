@@ -159,18 +159,33 @@ class AuthService extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
+      
+      // Validate phone number format
+      if (!phoneNumber.startsWith('+')) {
+        _setLoading(false);
+        onError('Phone number must include country code (e.g., +1 for US)');
+        return;
+      }
 
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
-        timeout: const Duration(seconds: 60),
+        timeout: const Duration(seconds: 120),
         verificationCompleted: (PhoneAuthCredential credential) async {
           // Auto-verification (Android only)
-          final userCredential = await _auth.signInWithCredential(credential);
-          _setLoading(false);
-          onAutoVerified(userCredential.user!);
+          try {
+            final userCredential = await _auth.signInWithCredential(credential);
+            _setLoading(false);
+            onAutoVerified(userCredential.user!);
+          } catch (e) {
+            _setLoading(false);
+            onError('Auto-verification failed. Please enter the code manually.');
+          }
         },
         verificationFailed: (FirebaseAuthException e) {
           _setLoading(false);
+          debugPrint('Phone auth error code: ${e.code}');
+          debugPrint('Phone auth error message: ${e.message}');
+          debugPrint('Phone auth error stack: ${e.stackTrace}');
           onError(_getErrorMessage(e.code));
         },
         codeSent: (String verificationId, int? resendToken) {
@@ -182,9 +197,11 @@ class AuthService extends ChangeNotifier {
           _verificationId = verificationId;
         },
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       _setLoading(false);
-      onError('Failed to send verification code');
+      debugPrint('Phone auth exception: $e');
+      debugPrint('Stack trace: $stackTrace');
+      onError('Failed to send verification code: ${e.toString()}');
     }
   }
 
@@ -257,11 +274,30 @@ class AuthService extends ChangeNotifier {
       case 'invalid-verification-id':
         return 'Verification expired. Please request a new code.';
       case 'invalid-phone-number':
-        return 'Please enter a valid phone number with country code.';
+        return 'Please enter a valid phone number with country code (e.g., +1234567890).';
       case 'quota-exceeded':
         return 'SMS quota exceeded. Please try again later.';
+      case 'missing-phone-number':
+        return 'Please enter your phone number.';
+      case 'captcha-check-failed':
+        return 'reCAPTCHA verification failed. Please try again.';
+      case 'app-not-authorized':
+        return 'This app is not authorized for phone authentication.';
+      case 'web-context-cancelled':
+        return 'Phone verification was cancelled.';
+      case 'network-request-failed':
+        return 'Network error. Please check your internet connection.';
+      case 'session-expired':
+        return 'Session expired. Please request a new code.';
+      case 'missing-client-identifier':
+        return 'App verification failed. Please restart the app.';
+      case 'app-not-verified':
+        return 'App not verified. Please check Firebase configuration.';
+      case 'internal-error':
+        return 'Server error. Please try again in a few minutes.';
       default:
-        return 'An error occurred. Please try again.';
+        debugPrint('Unhandled auth error code: $code');
+        return 'Authentication error ($code). Please try again.';
     }
   }
 }

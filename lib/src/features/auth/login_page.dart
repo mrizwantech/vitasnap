@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/strings.dart';
 import 'signup_page.dart';
-import 'phone_auth_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -273,23 +272,6 @@ class _LoginPageState extends State<LoginPage> {
                       label: 'Google',
                       color: Colors.red,
                       onTap: authService.isLoading ? null : _signInWithGoogle,
-                    ),
-                    const SizedBox(width: 16),
-                    // Phone
-                    _SocialButton(
-                      icon: Icons.phone,
-                      label: 'Phone',
-                      color: Colors.blue,
-                      onTap: authService.isLoading
-                          ? null
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const PhoneAuthPage(),
-                                ),
-                              );
-                            },
                     ),
                   ],
                 ),

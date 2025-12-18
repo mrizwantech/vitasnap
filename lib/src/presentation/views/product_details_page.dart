@@ -1,22 +1,202 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/services/dietary_preferences_service.dart';
 import '../../domain/entities/scan_result.dart';
 import '../widgets/vitasnap_logo.dart';
 
 /// Product details page showing nutritional info with option to add or share.
-class ProductDetailsPage extends StatelessWidget {
+class ProductDetailsPage extends StatefulWidget {
   final ScanResult scanResult;
 
   const ProductDetailsPage({super.key, required this.scanResult});
 
   @override
+  State<ProductDetailsPage> createState() => _ProductDetailsPageState();
+}
+
+class _ProductDetailsPageState extends State<ProductDetailsPage> {
+  bool _alertShown = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_alertShown) {
+      _alertShown = true;
+      // Check dietary preferences after the widget is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkDietaryPreferences();
+      });
+    }
+  }
+
+  void _checkDietaryPreferences() {
+    final dietaryService = context.read<DietaryPreferencesService>();
+    if (dietaryService.selectedRestrictions.isEmpty) return;
+
+    final product = widget.scanResult.product;
+    final result = dietaryService.checkProduct(
+      productLabels: product.labels,
+      allergens: null, // We don't have allergens from API yet
+      ingredients: product.ingredients,
+    );
+
+    if ((result.violations.isNotEmpty || result.matches.isNotEmpty) && mounted) {
+      _showDietaryAlert(matches: result.matches, violations: result.violations);
+    }
+  }
+
+  void _showDietaryAlert({
+    required List<DietaryRestriction> matches,
+    required List<DietaryRestriction> violations,
+  }) {
+    final primaryColor = const Color(0xFF1B8A4E);
+    final hasViolations = violations.isNotEmpty;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: hasViolations ? Colors.orange.shade100 : Colors.green.shade100,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            hasViolations ? Icons.warning_amber_rounded : Icons.check_circle_outline,
+            color: hasViolations ? Colors.orange.shade700 : Colors.green.shade700,
+            size: 32,
+          ),
+        ),
+        title: Text(hasViolations ? 'Dietary Alert' : 'Dietary Match'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Show matches first (green)
+            if (matches.isNotEmpty) ...[
+              Text(
+                'Matches your preferences:',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...matches.map((v) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        v.icon,
+                        color: Colors.green.shade600,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      v.displayName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.green.shade600,
+                      size: 18,
+                    ),
+                  ],
+                ),
+              )),
+            ],
+            // Show violations (red)
+            if (violations.isNotEmpty) ...[
+              if (matches.isNotEmpty) const SizedBox(height: 12),
+              Text(
+                'May not match:',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...violations.map((v) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        v.icon,
+                        color: Colors.red.shade600,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      v.displayName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.cancel,
+                      color: Colors.red.shade600,
+                      size: 18,
+                    ),
+                  ],
+                ),
+              )),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Got it',
+              style: TextStyle(color: primaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final product = scanResult.product;
-    final score = scanResult.score;
+    final product = widget.scanResult.product;
+    final score = widget.scanResult.score;
     final grade = _getGrade(score);
     final gradeColor = _getGradeColor(grade);
     final gradeMessage = _getGradeMessage(grade);
+    
+    // Check for dietary matches and violations
+    final dietaryService = context.watch<DietaryPreferencesService>();
+    final dietaryResult = dietaryService.selectedRestrictions.isNotEmpty
+        ? dietaryService.checkProduct(
+            productLabels: product.labels,
+            allergens: null,
+            ingredients: product.ingredients,
+          )
+        : (matches: <DietaryRestriction>[], violations: <DietaryRestriction>[]);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6FBF8),
@@ -32,6 +212,14 @@ class ProductDetailsPage extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
+              // Dietary info banner (shows matches and violations)
+              if (dietaryResult.matches.isNotEmpty || dietaryResult.violations.isNotEmpty) ...[
+                _DietaryInfoBanner(
+                  matches: dietaryResult.matches,
+                  violations: dietaryResult.violations,
+                ),
+                const SizedBox(height: 16),
+              ],
               // Product card
               Container(
                 width: double.infinity,
@@ -421,15 +609,15 @@ class ProductDetailsPage extends StatelessWidget {
   }
 
   void _shareProduct(BuildContext context) {
-    final product = scanResult.product;
-    final grade = _getGrade(scanResult.score);
+    final product = widget.scanResult.product;
+    final grade = _getGrade(widget.scanResult.score);
     final text =
         '''
 Check out this product on VitaSnap!
 
 ${product.name}
 Brand: ${product.brand.isNotEmpty ? product.brand : 'Unknown'}
-Health Score: ${scanResult.score}/100 (Grade $grade)
+Health Score: ${widget.scanResult.score}/100 (Grade $grade)
 
 Scan your food with VitaSnap to make healthier choices!
 ''';
@@ -657,4 +845,128 @@ List<_DietaryLabelInfo> _getDietaryLabels(List<String> labels) {
   }
 
   return result;
+}
+
+/// Info banner for dietary preference matches and violations
+class _DietaryInfoBanner extends StatelessWidget {
+  final List<DietaryRestriction> matches;
+  final List<DietaryRestriction> violations;
+
+  const _DietaryInfoBanner({
+    required this.matches,
+    required this.violations,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasViolations = violations.isNotEmpty;
+    final hasMatches = matches.isNotEmpty;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: hasViolations ? Colors.orange.shade50 : Colors.green.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: hasViolations ? Colors.orange.shade200 : Colors.green.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: hasViolations ? Colors.orange.shade100 : Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  hasViolations ? Icons.warning_amber_rounded : Icons.check_circle_outline,
+                  color: hasViolations ? Colors.orange.shade700 : Colors.green.shade700,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Dietary Check',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: hasViolations ? Colors.orange.shade800 : Colors.green.shade800,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Matches (green)
+          if (hasMatches) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: matches.map((v) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(v.icon, size: 16, color: Colors.green.shade700),
+                    const SizedBox(width: 6),
+                    Text(
+                      v.displayName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.check, size: 14, color: Colors.green.shade700),
+                  ],
+                ),
+              )).toList(),
+            ),
+          ],
+          // Violations (red)
+          if (hasViolations) ...[
+            if (hasMatches) const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: violations.map((v) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(v.icon, size: 16, color: Colors.red.shade700),
+                    const SizedBox(width: 6),
+                    Text(
+                      v.displayName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.close, size: 14, color: Colors.red.shade700),
+                  ],
+                ),
+              )).toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
