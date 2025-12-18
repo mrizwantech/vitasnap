@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/strings.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -14,7 +15,7 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text(AppStrings.profile),
         backgroundColor: Colors.white,
         foregroundColor: Colors.grey.shade800,
         elevation: 0,
@@ -63,7 +64,7 @@ class ProfilePage extends StatelessWidget {
 
                   // Name
                   Text(
-                    user?.displayName ?? 'User',
+                    user?.displayName ?? AppStrings.user,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -98,51 +99,51 @@ class ProfilePage extends StatelessWidget {
                 children: [
                   _SettingsTile(
                     icon: Icons.person_outline,
-                    title: 'Edit Profile',
+                    title: AppStrings.editProfile,
                     onTap: () {
                       // TODO: Implement edit profile
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Coming soon!')),
+                        const SnackBar(content: Text(AppStrings.comingSoon)),
                       );
                     },
                   ),
                   _divider(),
                   _SettingsTile(
                     icon: Icons.notifications_outlined,
-                    title: 'Notifications',
+                    title: AppStrings.notifications,
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Coming soon!')),
+                        const SnackBar(content: Text(AppStrings.comingSoon)),
                       );
                     },
                   ),
                   _divider(),
                   _SettingsTile(
                     icon: Icons.food_bank_outlined,
-                    title: 'Dietary Preferences',
+                    title: AppStrings.dietaryPreferences,
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Coming soon!')),
+                        const SnackBar(content: Text(AppStrings.comingSoon)),
                       );
                     },
                   ),
                   _divider(),
                   _SettingsTile(
                     icon: Icons.help_outline,
-                    title: 'Help & Support',
+                    title: AppStrings.helpAndSupport,
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Coming soon!')),
+                        const SnackBar(content: Text(AppStrings.comingSoon)),
                       );
                     },
                   ),
                   _divider(),
                   _SettingsTile(
                     icon: Icons.privacy_tip_outlined,
-                    title: 'Privacy Policy',
+                    title: AppStrings.privacyPolicy,
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Coming soon!')),
+                        const SnackBar(content: Text(AppStrings.comingSoon)),
                       );
                     },
                   ),
@@ -160,17 +161,17 @@ class ProfilePage extends StatelessWidget {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Sign Out'),
-                      content: const Text('Are you sure you want to sign out?'),
+                      title: const Text(AppStrings.signOutConfirmTitle),
+                      content: const Text(AppStrings.signOutConfirmMessage),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
+                          child: const Text(AppStrings.cancel),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(context, true),
                           child: const Text(
-                            'Sign Out',
+                            AppStrings.signOut,
                             style: TextStyle(color: Colors.red),
                           ),
                         ),
@@ -184,7 +185,7 @@ class ProfilePage extends StatelessWidget {
                 },
                 icon: const Icon(Icons.logout, color: Colors.red),
                 label: const Text(
-                  'Sign Out',
+                  AppStrings.signOut,
                   style: TextStyle(color: Colors.red),
                 ),
                 style: OutlinedButton.styleFrom(
@@ -199,7 +200,7 @@ class ProfilePage extends StatelessWidget {
 
             // App version
             Text(
-              'VitaSnap v1.0.0',
+              '${AppStrings.appName} v1.0.0',
               style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
             ),
           ],

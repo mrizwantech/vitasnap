@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/strings.dart';
 import 'signup_page.dart';
 import 'phone_auth_page.dart';
 
@@ -38,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result.error ?? 'Sign in failed'),
+          content: Text(result.error ?? AppStrings.signInFailed),
           backgroundColor: Colors.red,
         ),
       );
@@ -54,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result.error ?? 'Google sign in failed'),
+          content: Text(result.error ?? AppStrings.googleSignInFailed),
           backgroundColor: Colors.red,
         ),
       );
@@ -66,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter your email first'),
+          content: Text(AppStrings.pleaseEnterEmailFirst),
           backgroundColor: Colors.orange,
         ),
       );
@@ -82,8 +83,8 @@ class _LoginPageState extends State<LoginPage> {
       SnackBar(
         content: Text(
           result.success
-              ? 'Password reset email sent!'
-              : (result.error ?? 'Failed to send reset email'),
+              ? AppStrings.passwordResetEmailSent
+              : (result.error ?? AppStrings.failedToSendResetEmail),
         ),
         backgroundColor: result.success ? Colors.green : Colors.red,
       ),
@@ -117,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 // Title
                 Text(
-                  'VitaSnap',
+                  AppStrings.appName,
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -126,7 +127,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Scan. Know. Thrive.',
+                  AppStrings.appTagline,
                   style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 48),
@@ -141,7 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          labelText: 'Email',
+                          labelText: AppStrings.emailLabel,
                           prefixIcon: const Icon(Icons.email_outlined),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -151,10 +152,10 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
+                            return AppStrings.pleaseEnterEmail;
                           }
                           if (!value.contains('@')) {
-                            return 'Please enter a valid email';
+                            return AppStrings.pleaseEnterValidEmail;
                           }
                           return null;
                         },
@@ -166,7 +167,7 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
-                          labelText: 'Password',
+                          labelText: AppStrings.passwordLabel,
                           prefixIcon: const Icon(Icons.lock_outlined),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -188,7 +189,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
+                            return AppStrings.pleaseEnterPassword;
                           }
                           return null;
                         },
@@ -201,7 +202,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: TextButton(
                           onPressed: _resetPassword,
                           child: Text(
-                            'Forgot Password?',
+                            AppStrings.forgotPassword,
                             style: TextStyle(color: primaryColor),
                           ),
                         ),
@@ -233,7 +234,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 )
                               : const Text(
-                                  'Sign In',
+                                  AppStrings.signIn,
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -299,7 +300,7 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Don't have an account? ",
+                      AppStrings.dontHaveAccount,
                       style: TextStyle(color: Colors.grey.shade600),
                     ),
                     TextButton(
@@ -310,7 +311,7 @@ class _LoginPageState extends State<LoginPage> {
                         );
                       },
                       child: Text(
-                        'Sign Up',
+                        AppStrings.signUp,
                         style: TextStyle(
                           color: primaryColor,
                           fontWeight: FontWeight.w600,

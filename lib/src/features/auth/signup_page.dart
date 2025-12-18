@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/strings.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -45,7 +46,7 @@ class _SignUpPageState extends State<SignUpPage> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result.error ?? 'Sign up failed'),
+          content: Text(result.error ?? AppStrings.signUpFailed),
           backgroundColor: Colors.red,
         ),
       );
@@ -76,7 +77,7 @@ class _SignUpPageState extends State<SignUpPage> {
               children: [
                 // Title
                 Text(
-                  'Create Account',
+                  AppStrings.createAccount,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -85,7 +86,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign up to get started',
+                  AppStrings.signUpToGetStarted,
                   style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 40),
@@ -100,7 +101,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         controller: _nameController,
                         textCapitalization: TextCapitalization.words,
                         decoration: InputDecoration(
-                          labelText: 'Full Name',
+                          labelText: AppStrings.fullNameLabel,
                           prefixIcon: const Icon(Icons.person_outlined),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -110,7 +111,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your name';
+                            return AppStrings.pleaseEnterName;
                           }
                           return null;
                         },
@@ -122,7 +123,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          labelText: 'Email',
+                          labelText: AppStrings.emailLabel,
                           prefixIcon: const Icon(Icons.email_outlined),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -132,10 +133,10 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
+                            return AppStrings.pleaseEnterEmail;
                           }
                           if (!value.contains('@')) {
-                            return 'Please enter a valid email';
+                            return AppStrings.pleaseEnterValidEmail;
                           }
                           return null;
                         },
@@ -147,7 +148,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
-                          labelText: 'Password',
+                          labelText: AppStrings.passwordLabel,
                           prefixIcon: const Icon(Icons.lock_outlined),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -169,10 +170,10 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter a password';
+                            return AppStrings.pleaseEnterPassword;
                           }
                           if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
+                            return AppStrings.passwordMinLength;
                           }
                           return null;
                         },
@@ -184,7 +185,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,
                         decoration: InputDecoration(
-                          labelText: 'Confirm Password',
+                          labelText: AppStrings.confirmPasswordLabel,
                           prefixIcon: const Icon(Icons.lock_outlined),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -207,10 +208,10 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please confirm your password';
+                            return AppStrings.pleaseEnterPassword;
                           }
                           if (value != _passwordController.text) {
-                            return 'Passwords do not match';
+                            return AppStrings.passwordsDontMatch;
                           }
                           return null;
                         },
@@ -240,7 +241,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                   ),
                                 )
                               : const Text(
-                                  'Create Account',
+                                  AppStrings.createAccount,
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -258,13 +259,13 @@ class _SignUpPageState extends State<SignUpPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Already have an account? ',
+                      AppStrings.alreadyHaveAccount,
                       style: TextStyle(color: Colors.grey.shade600),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context),
                       child: Text(
-                        'Sign In',
+                        AppStrings.signIn,
                         style: TextStyle(
                           color: primaryColor,
                           fontWeight: FontWeight.w600,

@@ -15,6 +15,7 @@ import '../../domain/repositories/user_repository.dart';
 import '../../domain/entities/scan_result.dart';
 import '../../features/profile/profile_page.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/strings.dart';
 import '../viewmodels/scan_viewmodel.dart';
 
 class HomeDashboard extends StatefulWidget {
@@ -26,7 +27,7 @@ class HomeDashboard extends StatefulWidget {
 
 class _HomeDashboardState extends State<HomeDashboard> {
   late Future<List<ScanResult>> _scansFuture;
-  String _userName = 'there';
+  String _userName = AppStrings.defaultUserName;
   bool _showSearch = false;
   final _searchController = TextEditingController();
 
@@ -71,32 +72,34 @@ class _HomeDashboardState extends State<HomeDashboard> {
     context.read<UserRepository>().getUserName().then((name) {
       if (!mounted) return;
       setState(() {
-        _userName = name ?? 'there';
+        _userName = name ?? AppStrings.defaultUserName;
       });
     });
   }
 
+  String _getGreeting() => AppStrings.hello;
+
   Future<void> _editName() async {
     final controller = TextEditingController(
-      text: _userName == 'there' ? '' : _userName,
+      text: _userName == AppStrings.defaultUserName ? '' : _userName,
     );
     final newName = await showDialog<String?>(
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Edit name'),
+          title: const Text(AppStrings.editName),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(labelText: 'Your name'),
+            decoration: const InputDecoration(labelText: AppStrings.yourName),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: const Text(AppStrings.cancel),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-              child: const Text('Save'),
+              child: const Text(AppStrings.save),
             ),
           ],
         );
@@ -170,7 +173,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         if (results.isEmpty) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('No products found for "$query"')),
+              SnackBar(content: Text(AppStrings.noProductsFoundFor(query))),
             );
           }
           return;
@@ -192,7 +195,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Search error: $e')));
+          ).showSnackBar(SnackBar(content: Text(AppStrings.searchError(e.toString()))));
         }
       }
     }
@@ -242,21 +245,29 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 ],
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Good morning',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-              const SizedBox(height: 6),
               Row(
                 children: [
-                  Text(
-                    _userName,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: '${_getGreeting()}, ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.normal,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          TextSpan(text: _userName),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: _editName,
                     child: const Icon(Icons.edit, size: 18, color: Colors.grey),
@@ -285,7 +296,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               ),
               const SizedBox(height: 18),
               const Text(
-                'Recent Scans',
+                AppStrings.recentScans,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
@@ -304,7 +315,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         if (items.isEmpty) {
                           return const Center(
                             child: Text(
-                              'No scans yet. Tap the button to scan a product.',
+                              AppStrings.noScansYet,
                             ),
                           );
                         }
@@ -350,13 +361,13 @@ class _HomeDashboardState extends State<HomeDashboard> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _NavItem(icon: Icons.home, label: 'Home', active: true),
-              _NavItem(icon: Icons.bar_chart, label: 'Stats'),
+              _NavItem(icon: Icons.home, label: AppStrings.home, active: true),
+              _NavItem(icon: Icons.bar_chart, label: AppStrings.stats),
               const SizedBox(width: 64), // space for FAB
-              _NavItem(icon: Icons.dynamic_feed, label: 'Feed'),
+              _NavItem(icon: Icons.dynamic_feed, label: AppStrings.feed),
               _NavItem(
                 icon: Icons.person,
-                label: 'Profile',
+                label: AppStrings.profile,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -392,7 +403,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         controller: _searchController,
                         autofocus: true,
                         decoration: const InputDecoration(
-                          hintText: 'Search by name or barcode',
+                          hintText: AppStrings.searchByNameOrBarcode,
                           prefixIcon: Icon(Icons.search),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(
@@ -460,7 +471,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   },
                   backgroundColor: const Color(0xFF00C17B),
                   icon: const Icon(Icons.qr_code_scanner, size: 24),
-                  label: const Text('Scan it'),
+                  label: const Text(AppStrings.scanIt),
                 ),
               ],
             ),
@@ -501,7 +512,7 @@ class _WeeklyStatsCard extends StatelessWidget {
                 Row(
                   children: [
                     const Text(
-                      'Weekly Stats',
+                      AppStrings.weeklyStats,
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                     const SizedBox(width: 4),
@@ -522,7 +533,7 @@ class _WeeklyStatsCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${stats.scanCount} scan${stats.scanCount == 1 ? '' : 's'}',
+                    AppStrings.scansCount(stats.scanCount),
                     style: const TextStyle(color: Colors.white, fontSize: 11),
                   ),
                 ),
@@ -605,7 +616,7 @@ class _WeeklyStatsCard extends StatelessWidget {
                 Icon(Icons.calendar_today, color: Colors.white70, size: 14),
                 SizedBox(width: 6),
                 Text(
-                  'Average score this week',
+                  AppStrings.averageScoreThisWeek,
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
