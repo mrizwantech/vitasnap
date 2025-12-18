@@ -94,7 +94,9 @@ class ProductDetailsPage extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                product.brand.isNotEmpty ? product.brand : 'Unknown brand',
+                                product.brand.isNotEmpty
+                                    ? product.brand
+                                    : 'Unknown brand',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey.shade600,
@@ -126,7 +128,10 @@ class ProductDetailsPage extends StatelessWidget {
                     const SizedBox(height: 20),
                     // Grade message
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: gradeColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -135,7 +140,9 @@ class ProductDetailsPage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            grade == 'A' || grade == 'B' ? Icons.check_circle : Icons.info,
+                            grade == 'A' || grade == 'B'
+                                ? Icons.check_circle
+                                : Icons.info,
                             color: gradeColor,
                             size: 20,
                           ),
@@ -154,6 +161,76 @@ class ProductDetailsPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
+              // Dietary labels (vegetarian, halal, kosher, etc.)
+              if (_getDietaryLabels(product.labels).isNotEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Dietary Info',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      if (product.labels.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 18,
+                                color: Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'No dietary certification info available for this product',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _getDietaryLabels(product.labels)
+                              .map((label) => _DietaryBadge(label: label))
+                              .toList(),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
               // Nutritional breakdown
               Container(
                 width: double.infinity,
@@ -182,7 +259,10 @@ class ProductDetailsPage extends StatelessWidget {
                     const SizedBox(height: 16),
                     _NutrientRow(
                       label: 'Sugar',
-                      value: _getNutrientValue(product.nutriments, 'sugars_100g'),
+                      value: _getNutrientValue(
+                        product.nutriments,
+                        'sugars_100g',
+                      ),
                       unit: 'g',
                       color: const Color(0xFF00C17B),
                       maxValue: 50, // Reference: 50g is high
@@ -190,7 +270,9 @@ class ProductDetailsPage extends StatelessWidget {
                     const SizedBox(height: 12),
                     _NutrientRow(
                       label: 'Sodium',
-                      value: _getNutrientValue(product.nutriments, 'sodium_100g') * 1000, // Convert to mg
+                      value:
+                          _getNutrientValue(product.nutriments, 'sodium_100g') *
+                          1000, // Convert to mg
                       unit: 'mg',
                       color: const Color(0xFF00C17B),
                       maxValue: 2300, // Daily reference
@@ -198,7 +280,10 @@ class ProductDetailsPage extends StatelessWidget {
                     const SizedBox(height: 12),
                     _NutrientRow(
                       label: 'Fiber',
-                      value: _getNutrientValue(product.nutriments, 'fiber_100g'),
+                      value: _getNutrientValue(
+                        product.nutriments,
+                        'fiber_100g',
+                      ),
                       unit: 'g',
                       color: const Color(0xFF00C17B),
                       maxValue: 25, // Daily reference
@@ -207,7 +292,10 @@ class ProductDetailsPage extends StatelessWidget {
                     const SizedBox(height: 12),
                     _NutrientRow(
                       label: 'Protein',
-                      value: _getNutrientValue(product.nutriments, 'proteins_100g'),
+                      value: _getNutrientValue(
+                        product.nutriments,
+                        'proteins_100g',
+                      ),
                       unit: 'g',
                       color: const Color(0xFF00C17B),
                       maxValue: 50,
@@ -216,7 +304,10 @@ class ProductDetailsPage extends StatelessWidget {
                     const SizedBox(height: 12),
                     _NutrientRow(
                       label: 'Sat. Fat',
-                      value: _getNutrientValue(product.nutriments, 'saturated-fat_100g'),
+                      value: _getNutrientValue(
+                        product.nutriments,
+                        'saturated-fat_100g',
+                      ),
                       unit: 'g',
                       color: const Color(0xFF00C17B),
                       maxValue: 20, // Daily reference
@@ -332,7 +423,8 @@ class ProductDetailsPage extends StatelessWidget {
   void _shareProduct(BuildContext context) {
     final product = scanResult.product;
     final grade = _getGrade(scanResult.score);
-    final text = '''
+    final text =
+        '''
 Check out this product on VitaSnap!
 
 ${product.name}
@@ -418,7 +510,9 @@ class _NutrientRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = (value / maxValue).clamp(0.0, 1.0);
-    final displayValue = unit == 'mg' ? value.round() : value.toStringAsFixed(1);
+    final displayValue = unit == 'mg'
+        ? value.round()
+        : value.toStringAsFixed(1);
 
     return Row(
       children: [
@@ -426,10 +520,7 @@ class _NutrientRow extends StatelessWidget {
           width: 70,
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
           ),
         ),
         Expanded(
@@ -457,13 +548,113 @@ class _NutrientRow extends StatelessWidget {
           child: Text(
             '$displayValue$unit',
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ),
       ],
     );
   }
+}
+
+/// Dietary label badge widget
+class _DietaryBadge extends StatelessWidget {
+  final _DietaryLabelInfo label;
+
+  const _DietaryBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: label.color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: label.color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            label.isPresent ? Icons.check_circle : Icons.cancel,
+            size: 18,
+            color: label.color,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label.displayName,
+            style: TextStyle(
+              color: label.color,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dietary label info holder
+class _DietaryLabelInfo {
+  final String displayName;
+  final IconData icon;
+  final Color color;
+  final bool isPresent;
+
+  const _DietaryLabelInfo({
+    required this.displayName,
+    required this.icon,
+    required this.color,
+    this.isPresent = true,
+  });
+}
+
+/// Known dietary labels map
+const _dietaryLabelMap = {
+  // Religious certifications
+  'en:halal': ('Halal', Icons.verified, Color(0xFF009688)),
+  'en:kosher': ('Kosher', Icons.star, Color(0xFF3F51B5)),
+  // Dietary preferences
+  'en:vegan': ('Vegan', Icons.eco, Color(0xFF4CAF50)),
+  'en:vegetarian': ('Vegetarian', Icons.grass, Color(0xFF8BC34A)),
+  // Allergen-free
+  'en:gluten-free': ('Gluten Free', Icons.no_food, Color(0xFFFF9800)),
+  'en:no-gluten': ('Gluten Free', Icons.no_food, Color(0xFFFF9800)),
+  'en:lactose-free': ('Lactose Free', Icons.no_drinks, Color(0xFF2196F3)),
+  'en:no-lactose': ('Lactose Free', Icons.no_drinks, Color(0xFF2196F3)),
+  // Organic
+  'en:organic': ('Organic', Icons.spa, Color(0xFF66BB6A)),
+  'en:eu-organic': ('Organic', Icons.spa, Color(0xFF66BB6A)),
+  'en:usda-organic': ('Organic', Icons.spa, Color(0xFF66BB6A)),
+  // Other
+  'en:fair-trade': ('Fair Trade', Icons.handshake, Color(0xFF607D8B)),
+  'en:palm-oil-free': ('Palm Oil Free', Icons.nature, Color(0xFF795548)),
+  'en:no-palm-oil': ('Palm Oil Free', Icons.nature, Color(0xFF795548)),
+};
+
+/// Parse dietary labels - shows only labels that ARE present
+List<_DietaryLabelInfo> _getDietaryLabels(List<String> labels) {
+  final List<_DietaryLabelInfo> result = [];
+  final addedTypes = <String>{}; // Avoid duplicates
+
+  for (final tag in labels) {
+    final normalized = tag.toLowerCase();
+    if (_dietaryLabelMap.containsKey(normalized)) {
+      final (name, icon, color) = _dietaryLabelMap[normalized]!;
+      // Avoid duplicate types
+      if (!addedTypes.contains(name)) {
+        result.add(
+          _DietaryLabelInfo(
+            displayName: name,
+            icon: icon,
+            color: color,
+            isPresent: true,
+          ),
+        );
+        addedTypes.add(name);
+      }
+    }
+  }
+
+  return result;
 }

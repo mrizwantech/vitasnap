@@ -8,6 +8,8 @@ class Product {
 	final String? imageUrl;
 	final String? ingredients;
 	final Map<String, dynamic> nutriments;
+	/// Labels/certifications like vegetarian, vegan, halal, kosher, etc.
+	final List<String> labels;
 
 	Product({
 		required this.barcode,
@@ -16,5 +18,6 @@ class Product {
 		this.imageUrl,
 		this.ingredients,
 		this.nutriments = const {},
+		this.labels = const [],
 	});
 }

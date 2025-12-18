@@ -17,6 +17,7 @@ class ScanResult {
           'imageUrl': product.imageUrl,
           'ingredients': product.ingredients,
           'nutriments': product.nutriments,
+          'labels': product.labels,
         },
         'score': score,
         'timestamp': timestamp.toIso8601String(),
@@ -31,6 +32,7 @@ class ScanResult {
       imageUrl: p['imageUrl'] as String?,
       ingredients: p['ingredients'] as String?,
       nutriments: Map<String, dynamic>.from(p['nutriments'] ?? {}),
+      labels: (p['labels'] as List<dynamic>?)?.cast<String>() ?? [],
     );
     return ScanResult(
       product: product,

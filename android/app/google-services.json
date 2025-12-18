@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "741104919766",
+    "project_id": "vitasnap-d5c7d",
+    "storage_bucket": "vitasnap-d5c7d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:741104919766:android:ef4075b3370d44ef0d5577",
+        "android_client_info": {
+          "package_name": "com.mrizwantech.vitasnap"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "741104919766-fdosrsgs8jvnv2rptkmod1k2rpqsfjd4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mrizwantech.vitasnap",
+            "certificate_hash": "4a7914731f3b2de8a9df7cbcdbeb1836af9abc57"
+          }
+        },
+        {
+          "client_id": "741104919766-rqk00cpjrpvei4e3p0cavjl2v6q05cmv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZhB8uLI6krlz0M6tkUKnZsRJcY3xYw9k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "741104919766-rqk00cpjrpvei4e3p0cavjl2v6q05cmv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "741104919766-r9fr8k9jkuohiiomjl7hoh5kl9v6v662.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mrizwantech.vitasnap"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

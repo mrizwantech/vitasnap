@@ -19,4 +19,17 @@ class OpenFoodFactsApi {
 		developer.log('[OpenFoodFactsApi] received keys: ${json.keys.toList()}', name: 'OpenFoodFactsApi');
 		return json;
 	}
+
+	/// Search products by name/text query.
+	/// Returns a list of product JSON objects.
+	Future<List<Map<String, dynamic>>> searchProducts(String query, {int pageSize = 20}) async {
+		final uri = Uri.parse(
+			'https://world.openfoodfacts.org/cgi/search.pl?search_terms=${Uri.encodeComponent(query)}&json=1&page_size=$pageSize'
+		);
+		developer.log('[OpenFoodFactsApi] searching $uri', name: 'OpenFoodFactsApi');
+		final json = await _network.getJson(uri);
+		final products = json['products'] as List<dynamic>? ?? [];
+		developer.log('[OpenFoodFactsApi] search returned ${products.length} results', name: 'OpenFoodFactsApi');
+		return products.cast<Map<String, dynamic>>();
+	}
 }

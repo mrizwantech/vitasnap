@@ -31,5 +31,22 @@ class ProductRepositoryImpl implements ProductRepository {
 		final model = ProductModel.fromJson(json);
 		return model.toEntity();
 	}
+
+	@override
+	Future<List<Product>> searchProducts(String query) async {
+		final results = await api.searchProducts(query);
+		final products = <Product>[];
+		for (final productJson in results) {
+			// Wrap in expected format for ProductModel
+			final name = productJson['product_name'] ?? productJson['generic_name'];
+			if (name == null || name.toString().trim().isEmpty) continue;
+			try {
+				final model = ProductModel.fromJson({'product': productJson, 'status': 1});
+				products.add(model.toEntity());
+			} catch (_) {
+				// Skip invalid products
+			}
+		}
+		return products;
+	}
 }
-/// - Implement caching strategies if needed

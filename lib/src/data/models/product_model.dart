@@ -3,6 +3,7 @@
 /// Maps JSON from Open Food Facts into a model and provides conversion
 /// to the domain `Product` entity.
 library;
+import 'dart:developer' as developer;
 import '../../domain/entities/product.dart';
 
 class ProductModel {
@@ -12,6 +13,7 @@ class ProductModel {
 	final String? imageUrl;
 	final String? ingredients;
 	final Map<String, dynamic>? nutriments;
+	final List<String> labels;
 
 	ProductModel({
 		required this.barcode,
@@ -20,10 +22,23 @@ class ProductModel {
 		this.imageUrl,
 		this.ingredients,
 		this.nutriments,
+		this.labels = const [],
 	});
 
 	factory ProductModel.fromJson(Map<String, dynamic> json) {
 		final product = json['product'] as Map<String, dynamic>? ?? {};
+		// Extract labels_tags which contains dietary info like vegetarian, halal, etc.
+		final labelsTags = (product['labels_tags'] as List<dynamic>?)
+			?.map((e) => e.toString())
+			.toList() ?? [];
+		developer.log('[ProductModel] labels_tags: $labelsTags', name: 'ProductModel');
+		// Also try 'labels' field as fallback
+		if (labelsTags.isEmpty) {
+			final labelsStr = product['labels'] as String?;
+			if (labelsStr != null && labelsStr.isNotEmpty) {
+				developer.log('[ProductModel] labels string: $labelsStr', name: 'ProductModel');
+			}
+		}
 		return ProductModel(
 			barcode: product['code']?.toString() ?? '',
 			name: product['product_name'] ?? product['generic_name'] ?? 'Unknown',
@@ -31,6 +46,7 @@ class ProductModel {
 			imageUrl: product['image_front_small_url'],
 			ingredients: product['ingredients_text'],
 			nutriments: product['nutriments'] as Map<String, dynamic>?,
+			labels: labelsTags,
 		);
 	}
 
@@ -42,6 +58,7 @@ class ProductModel {
 			imageUrl: imageUrl,
 			ingredients: ingredients,
 			nutriments: nutriments ?? {},
+			labels: labels,
 		);
 	}
 }

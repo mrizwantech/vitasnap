@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'src/core/network/network_service.dart';
+import 'src/core/services/auth_service.dart';
 import 'src/data/datasources/open_food_facts_api.dart';
 import 'src/data/repositories/product_repository_impl.dart';
 import 'src/data/repositories/scan_history_repository_impl.dart';
@@ -11,13 +13,19 @@ import 'src/domain/usecases/get_product_by_barcode.dart';
 import 'src/domain/usecases/add_scan_result.dart';
 import 'src/domain/usecases/get_recent_scans.dart';
 import 'src/domain/usecases/compute_health_score.dart';
+import 'src/domain/usecases/search_products.dart';
 import 'src/domain/repositories/scan_history_repository.dart';
 import 'src/domain/repositories/user_repository.dart';
 import 'src/presentation/viewmodels/scan_viewmodel.dart';
 import 'src/presentation/views/home_dashboard.dart';
+import 'src/features/auth/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp();
+
   final prefs = await SharedPreferences.getInstance();
   runApp(MyApp(prefs: prefs));
 }
@@ -29,32 +37,68 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'VitaSnap',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return MultiProvider(
+      providers: [
+        Provider<SharedPreferences>(create: (_) => prefs),
+        Provider<NetworkService>(create: (_) => NetworkService()),
+        Provider(create: (ctx) => OpenFoodFactsApi(ctx.read<NetworkService>())),
+        Provider(
+          create: (ctx) => ProductRepositoryImpl(ctx.read<OpenFoodFactsApi>()),
+        ),
+        Provider(
+          create: (ctx) =>
+              GetProductByBarcode(ctx.read<ProductRepositoryImpl>()),
+        ),
+        Provider<ScanHistoryRepository>(
+          create: (ctx) => ScanHistoryRepositoryImpl(prefs),
+        ),
+        Provider<UserRepository>(create: (ctx) => UserRepositoryImpl(prefs)),
+        Provider(
+          create: (ctx) => AddScanResult(ctx.read<ScanHistoryRepository>()),
+        ),
+        Provider(
+          create: (ctx) => GetRecentScans(ctx.read<ScanHistoryRepository>()),
+        ),
+        Provider(create: (ctx) => ComputeHealthScore()),
+        Provider(
+          create: (ctx) => SearchProducts(ctx.read<ProductRepositoryImpl>()),
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => ScanViewModel(
+            ctx.read<GetProductByBarcode>(),
+            ctx.read<AddScanResult>(),
+            ctx.read<GetRecentScans>(),
+            ctx.read<ComputeHealthScore>(),
+          ),
+        ),
+        ChangeNotifierProvider(create: (_) => AuthService()),
+      ],
+      child: MaterialApp(
+        title: 'VitaSnap',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00C17B)),
+        ),
+        home: const AuthWrapper(),
       ),
-      home: const HomeDashboard(),
-      // Register providers here for simple DI
-      builder: (context, child) {
-        return MultiProvider(
-          providers: [
-            Provider<SharedPreferences>(create: (_) => prefs),
-            Provider<NetworkService>(create: (_) => NetworkService()),
-            Provider(create: (ctx) => OpenFoodFactsApi(ctx.read<NetworkService>())),
-            Provider(create: (ctx) => ProductRepositoryImpl(ctx.read<OpenFoodFactsApi>())),
-            Provider(create: (ctx) => GetProductByBarcode(ctx.read<ProductRepositoryImpl>())),
-            Provider<ScanHistoryRepository>(create: (ctx) => ScanHistoryRepositoryImpl(prefs)),
-            Provider<UserRepository>(create: (ctx) => UserRepositoryImpl(prefs)),
-            Provider(create: (ctx) => AddScanResult(ctx.read<ScanHistoryRepository>())),
-            Provider(create: (ctx) => GetRecentScans(ctx.read<ScanHistoryRepository>())),
-            Provider(create: (ctx) => ComputeHealthScore()),
-            ChangeNotifierProvider(create: (ctx) => ScanViewModel(ctx.read<GetProductByBarcode>(), ctx.read<AddScanResult>(), ctx.read<GetRecentScans>(), ctx.read<ComputeHealthScore>())),
-          ],
-          child: child,
-        );
-      },
     );
+  }
+}
+
+/// Wrapper widget that shows login or home based on auth state
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+
+    // Show home if authenticated, login if not
+    if (authService.isAuthenticated) {
+      return const HomeDashboard();
+    } else {
+      return const LoginPage();
+    }
   }
 }
 
