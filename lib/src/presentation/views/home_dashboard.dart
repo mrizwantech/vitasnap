@@ -31,8 +31,12 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
   bool _showSearch = false;
   final _searchController = TextEditingController();
 
+
   @override
   void dispose() {
+    // Remove callback to avoid memory leaks
+    final scanViewModel = context.read<ScanViewModel>();
+    scanViewModel.onScanHistoryRestored = null;
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
@@ -44,12 +48,17 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
     });
   }
 
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Initialize with empty future, then load after first frame
     _scansFuture = Future.value([]);
+
+    // Listen for scan history restored event
+    final scanViewModel = context.read<ScanViewModel>();
+    scanViewModel.onScanHistoryRestored = _refreshScans;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshScans();
@@ -156,7 +165,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
       // Navigate to product details page
       final result = await Navigator.of(context).push<Map<String, dynamic>>(
         MaterialPageRoute(
-          builder: (_) => ProductDetailsPage(scanResult: scanResult),
+          builder: (_) => ProductDetailsPage(scanResult: scanResult, showAddToList: false),
         ),
       );
 
@@ -354,7 +363,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (_) =>
-                                          ProductDetailsPage(scanResult: s),
+                                          ProductDetailsPage(scanResult: s, showAddToList: false),
                                     ),
                                   );
                                 },

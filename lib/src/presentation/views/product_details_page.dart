@@ -12,11 +12,13 @@ import '../widgets/vitasnap_logo.dart';
 class ProductDetailsPage extends StatefulWidget {
   final ScanResult scanResult;
   final bool showDietaryAlert;
+  final bool showAddToList;
 
   const ProductDetailsPage({
     super.key,
     required this.scanResult,
     this.showDietaryAlert = false,
+    this.showAddToList = true,
   });
 
   @override
@@ -638,24 +640,26 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   },
                 ),
               ),
-              const SizedBox(width: 12),
-              // Add to list button
-              Expanded(
-                flex: 2,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.pop(context, {'added': true}),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add to List'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00C17B),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              if (widget.showAddToList) ...[
+                const SizedBox(width: 12),
+                // Add to list button
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.pop(context, {'added': true}),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add to List'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00C17B),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

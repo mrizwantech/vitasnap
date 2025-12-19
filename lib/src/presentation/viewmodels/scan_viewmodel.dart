@@ -20,6 +20,9 @@ class ScanViewModel extends ChangeNotifier {
 	
 	ScanViewModel(this._getProduct, this._addScan, this._getRecent, this._computeScore);
 
+	/// Callback for when scan history is restored from cloud
+	VoidCallback? onScanHistoryRestored;
+
 	/// Set the cloud sync service for auto-syncing scans
 	void setCloudSyncService(CloudSyncService service) {
 		_cloudSyncService = service;

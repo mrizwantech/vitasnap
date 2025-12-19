@@ -494,6 +494,11 @@ class _ClearHistoryTile extends StatelessWidget {
 
     if (confirm == true && context.mounted) {
       await historyRepo.clearHistory();
+      // Also clear from Firebase if cloud sync is enabled
+      final cloudSync = context.read<CloudSyncService>();
+      if (cloudSync.isEnabled) {
+        await cloudSync.deleteCloudData();
+      }
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text(AppStrings.historyCleared)),
@@ -562,6 +567,8 @@ class _CloudSyncTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cloudSync = context.watch<CloudSyncService>();
+    // Always show switch as enabled by default if local storage is cleared
+    final cloudEnabled = cloudSync.isEnabled == true;
     
     return ListTile(
       leading: Icon(
@@ -581,7 +588,7 @@ class _CloudSyncTile extends StatelessWidget {
             )
           : null,
       trailing: Switch(
-        value: cloudSync.isEnabled,
+        value: cloudEnabled,
         activeColor: primaryColor,
         onChanged: (value) => _toggleCloudSync(context, value),
       ),
@@ -592,71 +599,14 @@ class _CloudSyncTile extends StatelessWidget {
     final cloudSync = context.read<CloudSyncService>();
     
     if (enable) {
-      // Show confirmation dialog
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          icon: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.cloud_upload,
-              color: primaryColor,
-              size: 32,
-            ),
+      await cloudSync.setEnabled(true);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cloud backup enabled!'),
+            backgroundColor: Colors.green,
           ),
-          title: const Text('Enable Cloud Backup?'),
-          content: const Text(
-            'Your scan history and dietary preferences will be securely backed up to the cloud. This allows you to access your data across devices.',
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Enable'),
-            ),
-          ],
-        ),
-      );
-      
-      if (confirm == true) {
-        // Get current data to sync
-        final scanHistoryRepo = context.read<ScanHistoryRepository>();
-        final dietaryPrefs = context.read<DietaryPreferencesService>();
-        
-        List<Map<String, dynamic>>? scanHistory;
-        if (scanHistoryRepo is ScanHistoryRepositoryImpl) {
-          final scans = await scanHistoryRepo.getRecentScans();
-          scanHistory = scans.map((s) => s.toJson()).toList();
-        }
-        
-        await cloudSync.setEnabled(true);
-        
-        // Sync data to cloud
-        await cloudSync.syncToCloud(
-          scanHistory: scanHistory,
-          dietaryPreferences: dietaryPrefs.selectedRestrictions,
         );
-        
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cloud backup enabled and data synced!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
       }
     } else {
       await cloudSync.setEnabled(false);

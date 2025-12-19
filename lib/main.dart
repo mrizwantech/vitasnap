@@ -1,3 +1,4 @@
+import 'src/domain/entities/scan_result.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -196,6 +197,45 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
     context.read<ScanViewModel>().setCloudSyncService(cloudSyncService);
     // Wire up cloud sync to dietary preferences for auto-sync
     dietaryPrefsService.setCloudSyncService(cloudSyncService);
+
+    // Restore data from Firestore if cloud sync is enabled
+    () async {
+      if (cloudSyncService.isEnabled) {
+        final cloudData = await cloudSyncService.fetchFromCloud();
+        debugPrint('Firestore data after login:');
+        debugPrint(cloudData == null ? 'No data found.' : cloudData.toString());
+        if (cloudData != null) {
+          // Restore scan history
+          if (cloudData['scanHistory'] is List && scanHistoryRepo is ScanHistoryRepositoryImpl) {
+            final scanList = (cloudData['scanHistory'] as List)
+                .map((e) => ScanResult.fromJson(Map<String, dynamic>.from(e)))
+                .toList();
+            // Sort by timestamp ascending (earliest first)
+            scanList.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+            // Save to local storage
+            await scanHistoryRepo.clearHistory();
+            for (final scan in scanList) {
+              await scanHistoryRepo.addScan(scan);
+            }
+            // Notify ScanViewModel to refresh UI and fire callback
+            final scanViewModel = context.read<ScanViewModel>();
+            scanViewModel.notifyListeners();
+            scanViewModel.onScanHistoryRestored?.call();
+          }
+          // Restore dietary preferences
+          if (cloudData['dietaryPreferences'] is List && dietaryPrefsService != null) {
+            final restrictions = (cloudData['dietaryPreferences'] as List)
+                .map((e) => DietaryRestriction.values.firstWhere(
+                      (r) => r.name == e,
+                      orElse: () => DietaryRestriction.vegan, // fallback, will filter below
+                    ))
+                .where((r) => (cloudData['dietaryPreferences'] as List).contains(r.name))
+                .toSet();
+            await dietaryPrefsService.setRestrictions(restrictions);
+          }
+        }
+      }
+    }();
   }
 
   @override

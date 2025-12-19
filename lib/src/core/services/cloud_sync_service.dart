@@ -11,7 +11,7 @@ class CloudSyncService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final SharedPreferences _prefs;
   
-  bool _isEnabled = false;
+  bool _isEnabled = true;
   bool _isSyncing = false;
   DateTime? _lastSyncTime;
   String? _userId;
@@ -38,7 +38,8 @@ class CloudSyncService extends ChangeNotifier {
       : _kLastSyncTime;
 
   void _loadSettings() {
-    _isEnabled = _prefs.getBool(_syncEnabledKey) ?? false;
+    // Always default to enabled if not set in local storage
+    _isEnabled = _prefs.getBool(_syncEnabledKey) ?? true;
     final lastSyncMs = _prefs.getInt(_lastSyncKey);
     _lastSyncTime = lastSyncMs != null 
         ? DateTime.fromMillisecondsSinceEpoch(lastSyncMs) 
@@ -50,11 +51,7 @@ class CloudSyncService extends ChangeNotifier {
     _isEnabled = enabled;
     await _prefs.setBool(_syncEnabledKey, enabled);
     notifyListeners();
-    
-    // If enabling, do an initial sync
-    if (enabled && _userId != null) {
-      await syncToCloud();
-    }
+    // Do NOT sync to cloud automatically when toggling
   }
 
   /// Get the Firestore document reference for the current user
