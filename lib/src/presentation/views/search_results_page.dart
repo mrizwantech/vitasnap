@@ -141,7 +141,7 @@ class _SearchResultTile extends StatelessWidget {
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (_, e, s) => Container(
                           width: 60,
                           height: 60,
                           color: Colors.grey.shade200,

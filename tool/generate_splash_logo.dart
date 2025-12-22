@@ -44,6 +44,8 @@ void main() {
   // Save as PNG
   final outputPath = 'assets/images/splash_logo.png';
   File(outputPath).writeAsBytesSync(img.encodePng(image));
+  // ignore: avoid_print
   print('✅ Generated: $outputPath');
+  // ignore: avoid_print
   print('📍 Logo saved to: ${File(outputPath).absolute.path}');
 }

@@ -291,9 +291,8 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
               await scanHistoryRepo.addScan(scan);
             }
             // Notify ScanViewModel to refresh UI and fire callback
-            // Using captured reference, not context.read
-            scanViewModel.notifyListeners();
-            scanViewModel.onScanHistoryRestored?.call();
+            // Using the public refresh method
+            scanViewModel.refreshAfterRestore();
           }
           // Restore dietary preferences
           if (cloudData['dietaryPreferences'] is List) {

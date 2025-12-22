@@ -134,6 +134,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
       },
     );
     if (newName != null && newName.isNotEmpty) {
+      if (!mounted) return;
       await context.read<UserRepository>().setUserName(newName);
       setState(() => _userName = newName);
     }
@@ -163,6 +164,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
 
       if (scanResult == null) {
         // Navigate to Product Not Found page
+        if (!mounted) return;
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => ProductNotFoundPage(barcode: query),
@@ -172,6 +174,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
       }
 
       // Navigate to product details page
+      if (!mounted) return;
       final result = await Navigator.of(context).push<Map<String, dynamic>>(
         MaterialPageRoute(
           builder: (_) => ProductDetailsPage(scanResult: scanResult, showAddToList: false),
@@ -185,6 +188,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
       }
     } else {
       // Text search - search by product name
+      if (!mounted) return;
       final searchProducts = context.read<SearchProducts>();
 
       // Show loading indicator
@@ -563,7 +567,7 @@ class _WeeklyStatsCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: gradeColor.withOpacity(0.4),
+                        color: gradeColor.withValues(alpha: 0.4),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
