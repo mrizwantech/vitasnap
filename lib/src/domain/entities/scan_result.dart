@@ -1,13 +1,20 @@
 import 'dart:convert';
 
 import 'product.dart';
+import 'recipe.dart'; // For MealType
 
 class ScanResult {
   final Product product;
   final int score; // 0-100
   final DateTime timestamp;
+  final MealType? mealType; // breakfast, lunch, dinner, snack
 
-  ScanResult({required this.product, required this.score, DateTime? timestamp}) : timestamp = timestamp ?? DateTime.now();
+  ScanResult({
+    required this.product,
+    required this.score,
+    DateTime? timestamp,
+    this.mealType,
+  }) : timestamp = timestamp ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
         'product': {
@@ -21,6 +28,7 @@ class ScanResult {
         },
         'score': score,
         'timestamp': timestamp.toIso8601String(),
+        'mealType': mealType?.name,
       };
 
   static ScanResult fromJson(Map<String, dynamic> json) {
@@ -34,10 +42,20 @@ class ScanResult {
       nutriments: Map<String, dynamic>.from(p['nutriments'] ?? {}),
       labels: (p['labels'] as List<dynamic>?)?.cast<String>() ?? [],
     );
+    
+    MealType? mealType;
+    if (json['mealType'] != null) {
+      mealType = MealType.values.firstWhere(
+        (e) => e.name == json['mealType'],
+        orElse: () => MealType.snack,
+      );
+    }
+    
     return ScanResult(
       product: product,
       score: (json['score'] as num).toInt(),
       timestamp: DateTime.parse(json['timestamp'] as String),
+      mealType: mealType,
     );
   }
 

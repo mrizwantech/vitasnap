@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/entities/product.dart';
+import '../../domain/entities/recipe.dart'; // For MealType
 import '../../domain/usecases/compute_health_score.dart';
 import '../../domain/entities/scan_result.dart';
 import '../viewmodels/scan_viewmodel.dart';
@@ -114,7 +115,14 @@ class _SearchResultTile extends StatelessWidget {
           
           // If user added the product, save it and return to home
           if (result != null && result['added'] == true) {
-            await vm.addToHistory(scanResult);
+            // Create new ScanResult with mealType if provided
+            final mealType = result['mealType'] as MealType?;
+            final scanWithMeal = ScanResult(
+              product: product,
+              score: score,
+              mealType: mealType,
+            );
+            await vm.addToHistory(scanWithMeal);
             if (context.mounted) {
               Navigator.of(context).pop({'added': true});
             }

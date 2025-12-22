@@ -2,33 +2,64 @@ import 'package:flutter/material.dart';
 
 import 'home_dashboard.dart';
 import 'favorites_page.dart';
+import 'add_food_page.dart';
 import '../../features/profile/profile_page.dart';
 
 /// Main navigation wrapper with bottom navigation bar
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
+  /// Navigate to home tab from anywhere in the widget tree
+  static void navigateToHome(BuildContext context) {
+    final state = context.findAncestorStateOfType<MainNavigationState>();
+    state?.navigateToTab(0);
+  }
+
   @override
-  State<MainNavigation> createState() => _MainNavigationState();
+  State<MainNavigation> createState() => MainNavigationState();
 }
 
-class _MainNavigationState extends State<MainNavigation> {
+class MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = const [
     HomeDashboard(),
+    AddFoodPage(),
     FavoritesPage(),
     ProfilePage(),
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Reset index to 0 when the widget is created (e.g., after login)
+    _currentIndex = 0;
+  }
+
+  /// Get safe current index (ensure it's within bounds)
+  int get _safeIndex => _currentIndex.clamp(0, _pages.length - 1);
+
+  /// Navigate to a specific tab by index
+  void navigateToTab(int index) {
+    if (index >= 0 && index < _pages.length) {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
+  }
+
+  /// Navigate to home tab (index 0)
+  void navigateToHome() => navigateToTab(0);
+
+  @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFF1B8A4E);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentIdx = _safeIndex;
 
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
+        index: currentIdx,
         children: _pages,
       ),
       bottomNavigationBar: Container(
@@ -42,7 +73,7 @@ class _MainNavigationState extends State<MainNavigation> {
           ],
         ),
         child: NavigationBar(
-          selectedIndex: _currentIndex,
+          selectedIndex: currentIdx,
           onDestinationSelected: (index) {
             setState(() {
               _currentIndex = index;
@@ -54,15 +85,23 @@ class _MainNavigationState extends State<MainNavigation> {
             NavigationDestination(
               icon: Icon(
                 Icons.home_outlined,
-                color: _currentIndex == 0 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                color: currentIdx == 0 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
               ),
               selectedIcon: Icon(Icons.home, color: primaryColor),
               label: 'Home',
             ),
             NavigationDestination(
               icon: Icon(
+                Icons.add_circle_outline,
+                color: currentIdx == 1 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+              ),
+              selectedIcon: Icon(Icons.add_circle, color: primaryColor),
+              label: 'Add Meal',
+            ),
+            NavigationDestination(
+              icon: Icon(
                 Icons.favorite_border,
-                color: _currentIndex == 1 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                color: currentIdx == 2 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
               ),
               selectedIcon: Icon(Icons.favorite, color: primaryColor),
               label: 'Favorites',
@@ -70,7 +109,7 @@ class _MainNavigationState extends State<MainNavigation> {
             NavigationDestination(
               icon: Icon(
                 Icons.person_outline,
-                color: _currentIndex == 2 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                color: currentIdx == 3 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
               ),
               selectedIcon: Icon(Icons.person, color: primaryColor),
               label: 'Profile',

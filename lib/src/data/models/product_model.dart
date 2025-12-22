@@ -14,6 +14,7 @@ class ProductModel {
 	final String? ingredients;
 	final Map<String, dynamic>? nutriments;
 	final List<String> labels;
+	final String? nutriscoreGrade; // Nutri-Score grade: a, b, c, d, e
 
 	ProductModel({
 		required this.barcode,
@@ -23,6 +24,7 @@ class ProductModel {
 		this.ingredients,
 		this.nutriments,
 		this.labels = const [],
+		this.nutriscoreGrade,
 	});
 
 	factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -39,6 +41,10 @@ class ProductModel {
 				developer.log('[ProductModel] labels string: $labelsStr', name: 'ProductModel');
 			}
 		}
+		// Extract Nutri-Score grade (a, b, c, d, e)
+		final nutriscoreGrade = product['nutriscore_grade']?.toString().toLowerCase();
+		developer.log('[ProductModel] nutriscore_grade: $nutriscoreGrade', name: 'ProductModel');
+		
 		return ProductModel(
 			barcode: product['code']?.toString() ?? '',
 			name: product['product_name'] ?? product['generic_name'] ?? 'Unknown',
@@ -47,6 +53,7 @@ class ProductModel {
 			ingredients: product['ingredients_text'],
 			nutriments: product['nutriments'] as Map<String, dynamic>?,
 			labels: labelsTags,
+			nutriscoreGrade: nutriscoreGrade,
 		);
 	}
 
@@ -59,6 +66,7 @@ class ProductModel {
 			ingredients: ingredients,
 			nutriments: nutriments ?? {},
 			labels: labels,
+			nutriscoreGrade: nutriscoreGrade,
 		);
 	}
 }

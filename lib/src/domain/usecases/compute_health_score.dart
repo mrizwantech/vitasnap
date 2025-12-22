@@ -1,13 +1,24 @@
 import '../entities/product.dart';
 
 class ComputeHealthScore {
-  // Compute a simple heuristic 0-100 score from nutriments map.
-  // Lower sugar, saturated fat, and salt produce higher scores.
+  /// Compute health score using Nutri-Score if available,
+  /// otherwise fall back to a heuristic based on nutriments.
+  /// 
+  /// Nutri-Score mapping: A=100, B=75, C=50, D=25, E=0
   int call(Product p) {
-    final n = p.nutriments;
-    // If no nutriment data, return a neutral score rather than perfect 100
+    // Prefer official Nutri-Score from OpenFoodFacts
+    if (p.nutriscoreGrade != null && p.nutriscoreGrade!.isNotEmpty) {
+      return p.nutriScoreValue;
+    }
+    
+    // Fallback: compute heuristic score from nutriments
+    return _computeFromNutriments(p.nutriments);
+  }
+
+  /// Fallback heuristic: 0-100 score based on sugar, saturated fat, salt
+  int _computeFromNutriments(Map<String, dynamic> n) {
     if (n.isEmpty) {
-      return 50;
+      return 50; // Neutral score if no data
     }
     double sugar = _toDouble(n['sugars_100g']);
     double satFat = _toDouble(n['saturated-fat_100g']);

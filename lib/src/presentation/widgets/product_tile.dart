@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/entities/recipe.dart'; // For MealType
+
 /// Dietary label info for display
 class DietaryLabelInfo {
   final String displayName;
@@ -73,6 +75,8 @@ class ProductTile extends StatelessWidget {
   final DateTime? timestamp;
   final VoidCallback? onTap;
   final List<String> labels;
+  final MealType? mealType;
+  
   const ProductTile({
     super.key,
     required this.title,
@@ -81,6 +85,7 @@ class ProductTile extends StatelessWidget {
     this.timestamp,
     this.onTap,
     this.labels = const [],
+    this.mealType,
   });
 
   String get _grade {
@@ -143,6 +148,19 @@ class ProductTile extends StatelessWidget {
     }
   }
 
+  Color _getMealTypeColor(MealType type) {
+    switch (type) {
+      case MealType.breakfast:
+        return const Color(0xFFFF9800); // Orange
+      case MealType.lunch:
+        return const Color(0xFF4CAF50); // Green
+      case MealType.dinner:
+        return const Color(0xFF2196F3); // Blue
+      case MealType.snack:
+        return const Color(0xFFE91E63); // Pink
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -196,14 +214,49 @@ class ProductTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        // Meal type badge
+                        if (mealType != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _getMealTypeColor(mealType!).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  mealType!.emoji,
+                                  style: const TextStyle(fontSize: 10),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  mealType!.displayName,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getMealTypeColor(mealType!),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        Expanded(
+                          child: Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                     if (timestamp != null) ...[
                       const SizedBox(height: 4),

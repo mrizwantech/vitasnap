@@ -10,6 +10,8 @@ class Product {
 	final Map<String, dynamic> nutriments;
 	/// Labels/certifications like vegetarian, vegan, halal, kosher, etc.
 	final List<String> labels;
+	/// Nutri-Score grade from OpenFoodFacts: a, b, c, d, e (or null if not available)
+	final String? nutriscoreGrade;
 
 	Product({
 		required this.barcode,
@@ -19,5 +21,26 @@ class Product {
 		this.ingredients,
 		this.nutriments = const {},
 		this.labels = const [],
+		this.nutriscoreGrade,
 	});
+
+	/// Get numeric health score from Nutri-Score grade
+	/// A=100, B=75, C=50, D=25, E=0
+	/// Returns 50 if grade is unknown
+	int get nutriScoreValue {
+		switch (nutriscoreGrade?.toLowerCase()) {
+			case 'a':
+				return 100;
+			case 'b':
+				return 75;
+			case 'c':
+				return 50;
+			case 'd':
+				return 25;
+			case 'e':
+				return 0;
+			default:
+				return 50; // Unknown/not available
+		}
+	}
 }

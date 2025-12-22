@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
+import '../../domain/entities/recipe.dart'; // For MealType
+import '../../domain/entities/scan_result.dart';
 import '../viewmodels/scan_viewmodel.dart';
 import '../views/product_not_found_page.dart';
 import '../views/product_details_page.dart';
@@ -87,7 +89,14 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
                   
                   // If user added the product, save it and return result to home
                   if (result != null && result['added'] == true) {
-                    await vm.addToHistory(scanResult);
+                    // Create new ScanResult with mealType if provided
+                    final mealType = result['mealType'] as MealType?;
+                    final scanWithMeal = ScanResult(
+                      product: scanResult.product,
+                      score: scanResult.score,
+                      mealType: mealType,
+                    );
+                    await vm.addToHistory(scanWithMeal);
                     // Pop scanner back to home with the result
                     if (mounted) {
                       navigator.pop({'added': true});

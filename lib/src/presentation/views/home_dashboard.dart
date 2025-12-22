@@ -37,6 +37,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
     // Remove callback to avoid memory leaks
     final scanViewModel = context.read<ScanViewModel>();
     scanViewModel.onScanHistoryRestored = null;
+    scanViewModel.removeListener(_onScanViewModelChanged);
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
@@ -59,11 +60,19 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
     // Listen for scan history restored event
     final scanViewModel = context.read<ScanViewModel>();
     scanViewModel.onScanHistoryRestored = _refreshScans;
+    
+    // Listen for changes to scan history (e.g., when meal is logged from meal builder)
+    scanViewModel.addListener(_onScanViewModelChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshScans();
       _loadUserName();
     });
+  }
+  
+  void _onScanViewModelChanged() {
+    // Refresh scans when ScanViewModel notifies (e.g., new item added)
+    _refreshScans();
   }
 
   @override
@@ -359,6 +368,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
                                 score: s.score,
                                 timestamp: s.timestamp,
                                 labels: s.product.labels,
+                                mealType: s.mealType,
                                 onTap: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
