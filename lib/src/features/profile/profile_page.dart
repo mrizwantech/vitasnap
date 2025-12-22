@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/theme_service.dart';
-import '../../core/services/dietary_preferences_service.dart';
 import '../../core/services/cloud_sync_service.dart';
 import '../../core/services/health_conditions_service.dart';
 import '../../core/strings.dart';
 import '../../domain/repositories/scan_history_repository.dart';
-import '../../data/repositories/scan_history_repository_impl.dart';
 import '../settings/dietary_preferences_page.dart';
 import '../settings/privacy_policy_page.dart';
 import '../../presentation/views/health_conditions_page.dart';
@@ -589,7 +587,7 @@ class _CloudSyncTile extends StatelessWidget {
           : null,
       trailing: Switch(
         value: cloudEnabled,
-        activeColor: primaryColor,
+        activeThumbColor: primaryColor,
         onChanged: (value) => _toggleCloudSync(context, value),
       ),
     );

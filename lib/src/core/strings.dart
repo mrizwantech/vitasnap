@@ -1,7 +1,7 @@
-/// App-wide string constants for UI text.
-///
-/// Centralizes all user-facing strings for easier maintenance,
-/// localization, and consistency across the app.
+// App-wide string constants for UI text.
+//
+// Centralizes all user-facing strings for easier maintenance,
+// localization, and consistency across the app.
 
 class AppStrings {
   AppStrings._();

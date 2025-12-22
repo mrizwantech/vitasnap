@@ -39,7 +39,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
   static const int _themeSlideIndex = 4;
   static const int _dietarySlideIndex = 5;
   static const int _healthSlideIndex = 6;
-  static const int _walkthroughSlideIndex = 7;
 
   final List<OnboardingItem> _introItems = [
     OnboardingItem(

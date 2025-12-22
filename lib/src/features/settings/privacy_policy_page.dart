@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/strings.dart';
 import '../../presentation/widgets/vitasnap_logo.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {

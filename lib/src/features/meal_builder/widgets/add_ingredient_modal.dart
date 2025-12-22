@@ -421,7 +421,7 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
                             : null,
                         isDark: isDark,
                       ),
-                      Container(
+                      SizedBox(
                         width: 36,
                         child: Text(
                           _quantity == _quantity.roundToDouble()

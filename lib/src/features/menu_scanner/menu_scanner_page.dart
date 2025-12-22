@@ -40,7 +40,6 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
   MenuAnalysisResult? _analysisResult;
   bool _isLoading = false;
   String? _errorMessage;
-  Uint8List? _selectedImageBytes;
   String _selectedFilter = 'all'; // 'all', 'best', 'caution', 'avoid'
   
   // Restaurant browser state
@@ -165,26 +164,26 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
 
   Future<void> _initializeRestaurants() async {
     // Seed popular restaurants on first launch
-    print('DEBUG: Starting restaurant initialization...');
+    debugPrint('DEBUG: Starting restaurant initialization...');
     await _restaurantService.seedPopularRestaurants();
-    print('DEBUG: Seeding complete, now loading restaurants...');
+    debugPrint('DEBUG: Seeding complete, now loading restaurants...');
     _loadRestaurants();
   }
 
   Future<void> _loadRestaurants({String? query}) async {
     setState(() => _loadingRestaurants = true);
     try {
-      print('DEBUG: Loading restaurants with query: $query');
+      debugPrint('DEBUG: Loading restaurants with query: $query');
       final restaurants = query != null && query.isNotEmpty
           ? await _restaurantService.searchRestaurants(query)
           : await _restaurantService.getRestaurants();
-      print('DEBUG: Loaded ${restaurants.length} restaurants');
+      debugPrint('DEBUG: Loaded ${restaurants.length} restaurants');
       setState(() {
         _restaurants = restaurants;
         _loadingRestaurants = false;
       });
     } catch (e) {
-      print('DEBUG: Error loading restaurants: $e');
+      debugPrint('DEBUG: Error loading restaurants: $e');
       setState(() => _loadingRestaurants = false);
     }
   }
@@ -287,7 +286,6 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
 
       final bytes = await image.readAsBytes();
       setState(() {
-        _selectedImageBytes = bytes;
         _analysisResult = null;
         _errorMessage = null;
       });
@@ -379,7 +377,6 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      _selectedImageBytes = null;
     });
 
     try {
@@ -452,7 +449,6 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               onPressed: () {
                 setState(() {
                   _analysisResult = null;
-                  _selectedImageBytes = null;
                   _errorMessage = null;
                 });
               },
@@ -676,39 +672,6 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
             ),
           ],
         ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: color.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            children: [
-              Icon(icon, size: 32, color: color),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -1124,7 +1087,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedCategory,
+                initialValue: selectedCategory,
                 decoration: InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(
@@ -1255,7 +1218,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
       
       if (hasNutritionData) {
         // Use LOCAL scoring - instant, free, works offline!
-        print('DEBUG: Using LOCAL scoring for ${items.length} items with nutrition data');
+        debugPrint('DEBUG: Using LOCAL scoring for ${items.length} items with nutrition data');
         result = _localScoringService.analyzeMenuItems(
           items: items,
           healthConditions: healthConditions,
@@ -1264,7 +1227,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
         );
       } else {
         // Fall back to AI for items without nutrition data
-        print('DEBUG: Using AI scoring for ${items.length} items (missing nutrition data)');
+        debugPrint('DEBUG: Using AI scoring for ${items.length} items (missing nutrition data)');
         final dishNames = items.map((item) => item.name).toList();
         result = await _menuService.analyzeDishNames(
           dishNames: dishNames,
@@ -1750,7 +1713,6 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
     // Clear search results and reset state
     setState(() {
       _analysisResult = null;
-      _selectedImageBytes = null;
       _errorMessage = null;
       _manualInputController.clear();
     });

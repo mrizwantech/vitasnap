@@ -179,7 +179,7 @@ class DietaryPreferencesPage extends StatelessWidget {
                     trailing: Switch(
                       value: isSelected,
                       onChanged: (_) => service.toggleRestriction(restriction),
-                      activeColor: primaryColor,
+                      activeThumbColor: primaryColor,
                     ),
                     onTap: () => service.toggleRestriction(restriction),
                   ),

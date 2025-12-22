@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/restaurant.dart';
 
 /// Service for managing community restaurant database
@@ -100,14 +101,14 @@ class RestaurantDatabaseService {
 
   /// Seed popular restaurants (call once to initialize)
   Future<void> seedPopularRestaurants() async {
-    print('DEBUG: Checking if restaurants already seeded...');
+    debugPrint('DEBUG: Checking if restaurants already seeded...');
     final existing = await _firestore.collection(_collection).limit(1).get();
     if (existing.docs.isNotEmpty) {
-      print('DEBUG: Restaurants already seeded, skipping');
+      debugPrint('DEBUG: Restaurants already seeded, skipping');
       return;
     }
 
-    print('DEBUG: No restaurants found, seeding now...');
+    debugPrint('DEBUG: No restaurants found, seeding now...');
     final restaurants = _getPopularRestaurants();
     final batch = _firestore.batch();
     
@@ -117,7 +118,7 @@ class RestaurantDatabaseService {
     }
     
     await batch.commit();
-    print('DEBUG: Seeded ${restaurants.length} restaurants');
+    debugPrint('DEBUG: Seeded ${restaurants.length} restaurants');
   }
 
   /// Pre-loaded popular restaurant chains with menu items

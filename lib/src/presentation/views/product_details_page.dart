@@ -717,7 +717,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     tileColor: isDark ? Colors.white10 : Colors.grey.shade50,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),

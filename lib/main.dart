@@ -119,7 +119,6 @@ class MyApp extends StatelessWidget {
         Provider<RecipeRepository>(
           create: (ctx) => RecipeRepositoryImpl(
             ctx.read<SharedPreferences>(),
-            ctx.read<OpenFoodFactsApi>(),
             ctx.read<UsdaFoodApi>(),
           ),
         ),

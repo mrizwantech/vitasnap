@@ -4,18 +4,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/recipe.dart';
 import '../../domain/repositories/recipe_repository.dart';
-import '../datasources/open_food_facts_api.dart';
 import '../datasources/usda_food_api.dart';
 
 /// Implementation of RecipeRepository using SharedPreferences for persistence
 /// and USDA FoodData Central API for ingredient nutrition data
 class RecipeRepositoryImpl implements RecipeRepository {
   final SharedPreferences _prefs;
-  final OpenFoodFactsApi _openFoodFactsApi;
   final UsdaFoodApi _usdaApi;
   static const _recipesKey = 'saved_recipes';
 
-  RecipeRepositoryImpl(this._prefs, this._openFoodFactsApi, this._usdaApi);
+  RecipeRepositoryImpl(this._prefs, this._usdaApi);
 
   @override
   Future<List<Recipe>> getRecipes() async {
@@ -185,69 +183,6 @@ class RecipeRepositoryImpl implements RecipeRepository {
       return 'grains';
     }
     
-    return 'other';
-  }
-
-  /// Convert an OpenFoodFacts product to a RecipeIngredient (kept for barcode scans)
-  RecipeIngredient _productToIngredient(Map<String, dynamic> product) {
-    final nutriments = Map<String, dynamic>.from(product['nutriments'] ?? {});
-    final name = product['product_name']?.toString() ?? 'Unknown';
-    final brands = product['brands']?.toString();
-    final displayName = brands != null && brands.isNotEmpty 
-        ? '$name ($brands)' 
-        : name;
-
-    // Get Nutri-Score from API or calculate from nutriments
-    final nutriscoreGrade = product['nutriscore_grade']?.toString().toLowerCase();
-    final nutriScore = NutriScoreGrade.fromString(nutriscoreGrade);
-
-    // Try to determine category from OpenFoodFacts categories
-    final categories = product['categories']?.toString().toLowerCase() ?? '';
-    final category = _inferCategory(categories);
-
-    // Get appropriate emoji based on category
-    final emoji = _getCategoryEmoji(category, name.toLowerCase());
-
-    return RecipeIngredient(
-      id: product['code']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      name: displayName,
-      iconEmoji: emoji,
-      quantity: 1,
-      unit: IngredientUnit.gram,
-      category: category,
-      nutriScore: nutriScore,
-      nutriments: nutriments,
-    );
-  }
-
-  /// Infer ingredient category from OpenFoodFacts categories
-  String _inferCategory(String categories) {
-    if (categories.contains('meat') || 
-        categories.contains('fish') || 
-        categories.contains('egg') ||
-        categories.contains('poultry') ||
-        categories.contains('seafood')) {
-      return 'protein';
-    }
-    if (categories.contains('vegetable') || categories.contains('salad')) {
-      return 'veggies';
-    }
-    if (categories.contains('fruit') || categories.contains('berry')) {
-      return 'fruits';
-    }
-    if (categories.contains('bread') || 
-        categories.contains('cereal') || 
-        categories.contains('grain') ||
-        categories.contains('pasta') ||
-        categories.contains('rice')) {
-      return 'grains';
-    }
-    if (categories.contains('dairy') || 
-        categories.contains('milk') || 
-        categories.contains('cheese') ||
-        categories.contains('yogurt')) {
-      return 'dairy';
-    }
     return 'other';
   }
 
