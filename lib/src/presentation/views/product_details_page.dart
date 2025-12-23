@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/services/dietary_preferences_service.dart';
 import '../../core/services/favorites_service.dart';
 import '../../core/services/health_conditions_service.dart';
+import '../../domain/entities/recipe.dart'; // For MealType
 import '../../domain/entities/scan_result.dart';
 import '../widgets/vitasnap_logo.dart';
 
@@ -642,13 +643,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               ),
               if (widget.showAddToList) ...[
                 const SizedBox(width: 12),
-                // Add to list button
+                // Add to list button - shows meal type picker
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
-                    onPressed: () => Navigator.pop(context, {'added': true}),
+                    onPressed: () => _showMealTypePicker(context),
                     icon: const Icon(Icons.add),
-                    label: const Text('Add to List'),
+                    label: const Text('Log Meal'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00C17B),
                       foregroundColor: Colors.white,
@@ -664,6 +665,64 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showMealTypePicker(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF252542) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Log as...',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ...MealType.values.map((meal) {
+                  return ListTile(
+                    leading: Text(meal.emoji, style: const TextStyle(fontSize: 24)),
+                    title: Text(
+                      meal.displayName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(ctx); // Close bottom sheet
+                      Navigator.pop(context, {
+                        'added': true,
+                        'mealType': meal,
+                      });
+                    },
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    tileColor: isDark ? Colors.white10 : Colors.grey.shade50,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

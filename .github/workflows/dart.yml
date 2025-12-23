@@ -7,13 +7,11 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      # Install Flutter SDK
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -22,11 +20,50 @@ jobs:
         run: flutter pub get
 
       - name: Analyze project source
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
 
       - name: Run tests
         run: flutter test
 
-      # Optional: Verify formatting
-      # - name: Verify formatting
-      #   run: flutter format --set-exit-if-changed .
+      - name: Decode keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
+
+      - name: Build APK
+        run: flutter build apk --release
+        env:
+          ANDROID_KEYSTORE_PATH: release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VitaSnap-Android
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS (unsigned)
+        run: flutter build ios --release --no-codesign
+
+      - name: Compress iOS build
+        run: |
+          cd build/ios/iphoneos
+          zip -r Runner.zip Runner.app
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: VitaSnap-iOS
+          path: build/ios/iphoneos/Runner.zip

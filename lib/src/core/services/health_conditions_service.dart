@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -177,12 +176,19 @@ class HealthAnalysisResult {
 
 /// Service to manage health conditions and analyze products
 class HealthConditionsService extends ChangeNotifier {
-  static const _kHealthConditionsKey = 'health_conditions';
+  static const _kHealthConditionsPrefix = 'health_conditions_';
   
   final SharedPreferences _prefs;
+  String? _userId;
   Set<HealthCondition> _selectedConditions = {};
 
-  HealthConditionsService(this._prefs) {
+  HealthConditionsService(this._prefs);
+
+  String get _storageKey => _userId != null ? '$_kHealthConditionsPrefix$_userId' : '${_kHealthConditionsPrefix}anonymous';
+
+  /// Set the current user ID and reload conditions for that user
+  void setUserId(String? userId) {
+    _userId = userId;
     _loadConditions();
   }
 
@@ -208,7 +214,7 @@ class HealthConditionsService extends ChangeNotifier {
   }
 
   void _loadConditions() {
-    final encoded = _prefs.getString(_kHealthConditionsKey);
+    final encoded = _prefs.getString(_storageKey);
     if (encoded != null) {
       try {
         final List<dynamic> list = jsonDecode(encoded);
@@ -220,13 +226,17 @@ class HealthConditionsService extends ChangeNotifier {
             .toSet();
       } catch (e) {
         debugPrint('Error loading health conditions: $e');
+        _selectedConditions = {};
       }
+    } else {
+      _selectedConditions = {};
     }
+    notifyListeners();
   }
 
   Future<void> _saveConditions() async {
     final encoded = jsonEncode(_selectedConditions.map((c) => c.name).toList());
-    await _prefs.setString(_kHealthConditionsKey, encoded);
+    await _prefs.setString(_storageKey, encoded);
   }
 
   /// Analyze a product for the user's health conditions

@@ -1,7 +1,7 @@
-/// Use case: search products by query or barcode prefix.
-///
-/// Responsibilities:
-/// - Accept query parameters and return a list of domain `Product`
+// Use case: search products by query or barcode prefix.
+//
+// Responsibilities:
+// - Accept query parameters and return a list of domain `Product`
 import '../entities/product.dart';
 import '../repositories/product_repository.dart';
 

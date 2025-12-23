@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'firebase_options.dart';
 
 import 'src/core/network/network_service.dart';
 import 'src/core/services/auth_service.dart';
@@ -16,17 +18,26 @@ import 'src/core/services/cloud_sync_service.dart';
 import 'src/core/services/favorites_service.dart';
 import 'src/core/services/health_conditions_service.dart';
 import 'src/data/datasources/open_food_facts_api.dart';
+import 'src/data/datasources/usda_food_api.dart';
 import 'src/data/repositories/product_repository_impl.dart';
 import 'src/data/repositories/scan_history_repository_impl.dart';
 import 'src/data/repositories/user_repository_impl.dart';
+import 'src/data/repositories/recipe_repository_impl.dart';
 import 'src/domain/usecases/get_product_by_barcode.dart';
 import 'src/domain/usecases/add_scan_result.dart';
 import 'src/domain/usecases/get_recent_scans.dart';
 import 'src/domain/usecases/compute_health_score.dart';
 import 'src/domain/usecases/search_products.dart';
+import 'src/domain/usecases/compute_recipe_score.dart';
+import 'src/domain/usecases/get_preset_ingredients.dart';
+import 'src/domain/usecases/get_recipes.dart';
+import 'src/domain/usecases/save_recipe.dart';
+import 'src/domain/usecases/search_ingredients.dart';
 import 'src/domain/repositories/scan_history_repository.dart';
 import 'src/domain/repositories/user_repository.dart';
+import 'src/domain/repositories/recipe_repository.dart';
 import 'src/presentation/viewmodels/scan_viewmodel.dart';
+import 'src/presentation/viewmodels/meal_builder_viewmodel.dart';
 import 'src/presentation/views/main_navigation.dart';
 import 'src/features/auth/login_page.dart';
 import 'src/features/onboarding/onboarding_page.dart';
@@ -37,7 +48,19 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     // Initialize Firebase
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Activate Firebase App Check
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: kDebugMode 
+          ? AndroidProvider.debug 
+          : AndroidProvider.playIntegrity,
+      appleProvider: kDebugMode 
+          ? AppleProvider.debug 
+          : AppleProvider.appAttest,
+    );
 
     // Initialize Crashlytics (only in release mode)
     if (!kDebugMode) {
@@ -88,12 +111,45 @@ class MyApp extends StatelessWidget {
         Provider(
           create: (ctx) => SearchProducts(ctx.read<ProductRepositoryImpl>()),
         ),
+        // USDA Food API for generic ingredients
+        Provider(
+          create: (ctx) => UsdaFoodApi(ctx.read<NetworkService>()),
+        ),
+        // Recipe Builder providers
+        Provider<RecipeRepository>(
+          create: (ctx) => RecipeRepositoryImpl(
+            ctx.read<SharedPreferences>(),
+            ctx.read<UsdaFoodApi>(),
+          ),
+        ),
+        Provider(create: (ctx) => ComputeRecipeScore()),
+        Provider(
+          create: (ctx) => GetPresetIngredients(ctx.read<RecipeRepository>()),
+        ),
+        Provider(
+          create: (ctx) => SearchIngredients(ctx.read<RecipeRepository>()),
+        ),
+        Provider(
+          create: (ctx) => GetRecipes(ctx.read<RecipeRepository>()),
+        ),
+        Provider(
+          create: (ctx) => SaveRecipe(ctx.read<RecipeRepository>()),
+        ),
         ChangeNotifierProvider(
           create: (ctx) => ScanViewModel(
             ctx.read<GetProductByBarcode>(),
             ctx.read<AddScanResult>(),
             ctx.read<GetRecentScans>(),
             ctx.read<ComputeHealthScore>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => MealBuilderViewModel(
+            ctx.read<ComputeRecipeScore>(),
+            ctx.read<GetPresetIngredients>(),
+            ctx.read<SearchIngredients>(),
+            ctx.read<GetRecipes>(),
+            ctx.read<SaveRecipe>(),
           ),
         ),
         ChangeNotifierProvider(create: (_) => AuthService()),
@@ -170,18 +226,29 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
     super.didUpdateWidget(oldWidget);
     // Re-check onboarding if user changed
     if (oldWidget.userId != widget.userId) {
+      // Reset to loading state to allow old widgets to dispose properly
+      setState(() {
+        _onboardingComplete = null;
+      });
       _checkOnboarding();
     }
   }
 
   Future<void> _checkOnboarding() async {
+    debugPrint('Checking onboarding for user: ${widget.userId}');
     final complete = await OnboardingPage.isCompleteForUser(widget.userId);
+    debugPrint('Onboarding complete: $complete');
+    // Guard: ensure widget is still mounted before calling setState
+    if (!mounted) return;
     setState(() {
       _onboardingComplete = complete;
     });
   }
 
   void _updateUserServices(String? userId) {
+    // Guard: ensure widget is still mounted
+    if (!mounted) return;
+    
     // Set user ID on scan history repository
     final scanHistoryRepo = context.read<ScanHistoryRepository>();
     if (scanHistoryRepo is ScanHistoryRepositoryImpl) {
@@ -190,15 +257,20 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
     // Set user ID on dietary preferences service
     final dietaryPrefsService = context.read<DietaryPreferencesService>();
     dietaryPrefsService.setUserId(userId);
+    // Set user ID on health conditions service
+    final healthConditionsService = context.read<HealthConditionsService>();
+    healthConditionsService.setUserId(userId);
     // Set user ID on cloud sync service
     final cloudSyncService = context.read<CloudSyncService>();
     cloudSyncService.setUserId(userId);
     // Wire up cloud sync to scan viewmodel for auto-sync
-    context.read<ScanViewModel>().setCloudSyncService(cloudSyncService);
+    final scanViewModel = context.read<ScanViewModel>();
+    scanViewModel.setCloudSyncService(cloudSyncService);
     // Wire up cloud sync to dietary preferences for auto-sync
     dietaryPrefsService.setCloudSyncService(cloudSyncService);
 
     // Restore data from Firestore if cloud sync is enabled
+    // Note: We capture all references above BEFORE the async block
     () async {
       if (cloudSyncService.isEnabled) {
         final cloudData = await cloudSyncService.fetchFromCloud();
@@ -218,12 +290,11 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
               await scanHistoryRepo.addScan(scan);
             }
             // Notify ScanViewModel to refresh UI and fire callback
-            final scanViewModel = context.read<ScanViewModel>();
-            scanViewModel.notifyListeners();
-            scanViewModel.onScanHistoryRestored?.call();
+            // Using the public refresh method
+            scanViewModel.refreshAfterRestore();
           }
           // Restore dietary preferences
-          if (cloudData['dietaryPreferences'] is List && dietaryPrefsService != null) {
+          if (cloudData['dietaryPreferences'] is List) {
             final restrictions = (cloudData['dietaryPreferences'] as List)
                 .map((e) => DietaryRestriction.values.firstWhere(
                       (r) => r.name == e,
@@ -271,7 +342,7 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
     }
 
     // Show main app for users who completed onboarding
-    return MainNavigation(key: ValueKey(currentUserId));
+    return const MainNavigation();
   }
 }
 

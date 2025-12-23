@@ -28,6 +28,12 @@ class ScanViewModel extends ChangeNotifier {
 		_cloudSyncService = service;
 	}
 
+	/// Notify listeners that scan history has been restored
+	void refreshAfterRestore() {
+		notifyListeners();
+		onScanHistoryRestored?.call();
+	}
+
 	bool _loading = false;
 	bool get loading => _loading;
 

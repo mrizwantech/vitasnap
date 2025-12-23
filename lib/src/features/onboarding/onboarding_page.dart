@@ -39,7 +39,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
   static const int _themeSlideIndex = 4;
   static const int _dietarySlideIndex = 5;
   static const int _healthSlideIndex = 6;
-  static const int _walkthroughSlideIndex = 7;
 
   final List<OnboardingItem> _introItems = [
     OnboardingItem(
@@ -1081,27 +1080,34 @@ class _WalkthroughSlide extends StatelessWidget {
                 ),
                 _WalkthroughStep(
                   step: 2,
-                  icon: Icons.visibility,
-                  title: 'View Details',
-                  description: 'See nutritional info, health score, and personalized warnings based on your preferences.',
-                  color: Color(0xFF2196F3),
+                  icon: Icons.restaurant_menu,
+                  title: 'Restaurant Menu Scanner',
+                  description: 'Take a photo of any restaurant menu to get AI-powered nutritional analysis and health recommendations.',
+                  color: Color(0xFFE65100),
                 ),
                 _WalkthroughStep(
                   step: 3,
+                  icon: Icons.lunch_dining,
+                  title: 'Build Your Meal',
+                  description: 'Combine ingredients to build custom meals and see the total nutritional breakdown and health score.',
+                  color: Color(0xFF00897B),
+                ),
+                _WalkthroughStep(
+                  step: 4,
                   icon: Icons.favorite_border,
                   title: 'Save Favorites',
                   description: 'Tap the heart icon to save products you love for quick access later.',
                   color: Color(0xFFE91E63),
                 ),
                 _WalkthroughStep(
-                  step: 4,
+                  step: 5,
                   icon: Icons.history,
                   title: 'Track History',
-                  description: 'All your scanned products are saved automatically. Review them anytime from your history.',
+                  description: 'All your scanned products and meals are saved automatically. Review them anytime from your history.',
                   color: Color(0xFFFF9800),
                 ),
                 _WalkthroughStep(
-                  step: 5,
+                  step: 6,
                   icon: Icons.settings,
                   title: 'Customize Settings',
                   description: 'Update your dietary preferences, health conditions, or theme anytime in the Profile tab.',
