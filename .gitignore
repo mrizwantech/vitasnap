@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android signing - keep these out of version control
+android/app/release.keystore
+keystore.b64
+*.keystore
+*.jks
