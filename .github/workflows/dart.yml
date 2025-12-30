@@ -28,42 +28,18 @@ jobs:
       - name: Decode keystore
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
 
-      - name: Build APK
-        run: flutter build apk --release
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
         env:
           ANDROID_KEYSTORE_PATH: release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
 
-      - name: Upload APK
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: VitaSnap-Android
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: VitaSnap-Android-AAB
+          path: build/app/outputs/bundle/release/app-release.aab
 
-  build-ios:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build iOS (unsigned)
-        run: flutter build ios --release --no-codesign
-
-      - name: Compress iOS build
-        run: |
-          cd build/ios/iphoneos
-          zip -r Runner.zip Runner.app
-
-      - name: Upload iOS build
-        uses: actions/upload-artifact@v4
-        with:
-          name: VitaSnap-iOS
-          path: build/ios/iphoneos/Runner.zip
+  # iOS build job removed
