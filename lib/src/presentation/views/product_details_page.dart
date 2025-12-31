@@ -670,9 +670,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 
   void _showMealTypePicker(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: isDark ? const Color(0xFF252542) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -680,45 +680,52 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       builder: (ctx) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Log as...',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Log as...',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                ...MealType.values.map((meal) {
-                  return ListTile(
-                    leading: Text(meal.emoji, style: const TextStyle(fontSize: 24)),
-                    title: Text(
-                      meal.displayName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white : Colors.black87,
+                  const SizedBox(height: 16),
+                  ...MealType.values.map((meal) {
+                    return ListTile(
+                      leading: Text(meal.emoji, style: const TextStyle(fontSize: 24)),
+                      title: Text(
+                        meal.displayName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                       ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(ctx); // Close bottom sheet
-                      Navigator.pop(context, {
-                        'added': true,
-                        'mealType': meal,
-                      });
-                    },
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    tileColor: isDark ? Colors.white10 : Colors.grey.shade50,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  );
-                }),
-              ],
+                      onTap: () {
+                        Navigator.pop(ctx); // Close bottom sheet
+                        Navigator.pop(context, {
+                          'added': true,
+                          'mealType': meal,
+                        });
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      tileColor: isDark ? Colors.white10 : Colors.grey.shade50,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    );
+                  }),
+                ],
+              ),
             ),
           ),
         );

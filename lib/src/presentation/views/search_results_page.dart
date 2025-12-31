@@ -106,13 +106,15 @@ class _SearchResultTile extends StatelessWidget {
         onTap: () async {
           final scanResult = ScanResult(product: product, score: score);
           final vm = context.read<ScanViewModel>();
-          
+
           final result = await Navigator.of(context).push<Map<String, dynamic>>(
             MaterialPageRoute(
-              builder: (_) => ProductDetailsPage(scanResult: scanResult),
+              builder: (_) => ProductDetailsPage(
+                scanResult: scanResult,
+              ),
             ),
           );
-          
+
           // If user added the product, save it and return to home
           if (result != null && result['added'] == true) {
             // Create new ScanResult with mealType if provided

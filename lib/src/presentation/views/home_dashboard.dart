@@ -177,7 +177,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
       if (!mounted) return;
       final result = await Navigator.of(context).push<Map<String, dynamic>>(
         MaterialPageRoute(
-          builder: (_) => ProductDetailsPage(scanResult: scanResult, showAddToList: false),
+          builder: (_) => ProductDetailsPage(scanResult: scanResult),
         ),
       );
 
@@ -239,257 +239,415 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
     return Scaffold(
       backgroundColor: isDark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF6FBF8),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 8),
-              Stack(
-                alignment: Alignment.center,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 700;
+            if (isWide) {
+              // Tablet/large screen: two-column layout
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Centered logo with tagline
-                  const Center(
-                    child: VitaSnapLogo(fontSize: 22, showTagline: true),
-                  ),
-                  // Icons positioned on the right
-                  Positioned(
-                    right: 0,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            // TODO: Notifications
-                          },
-                          icon: const Icon(Icons.notifications_outlined),
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-                        ),
-                        IconButton(
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ProfilePage(),
-                              ),
-                            );
-                            // Refresh scans when coming back from profile/settings
-                            _refreshScans();
-                          },
-                          icon: const Icon(Icons.settings_outlined),
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
+                  // Left column: greeting, stats, actions
                   Expanded(
-                    child: RichText(
-                      text: TextSpan(
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(32, 24, 16, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TextSpan(
-                            text: '${_getGreeting()}, ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.normal,
-                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                            ),
+                          const SizedBox(height: 8),
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const Center(
+                                child: VitaSnapLogo(fontSize: 28, showTagline: true),
+                              ),
+                              Positioned(
+                                right: 0,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(Icons.notifications_outlined),
+                                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                                    ),
+                                    IconButton(
+                                      onPressed: () async {
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => const ProfilePage(),
+                                          ),
+                                        );
+                                        _refreshScans();
+                                      },
+                                      icon: const Icon(Icons.settings_outlined),
+                                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          TextSpan(text: _userName),
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: RichText(
+                                  text: TextSpan(
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: '${_getGreeting()}, ',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.normal,
+                                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                        ),
+                                      ),
+                                      TextSpan(text: _userName),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: _editName,
+                                child: Icon(Icons.edit, size: 20, color: isDark ? Colors.grey.shade400 : Colors.grey),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+                          FutureBuilder<List<ScanResult>>(
+                            future: _scansFuture,
+                            builder: (context, snap) {
+                              final scans = snap.data ?? [];
+                              final stats = ComputeWeeklyStats()(scans);
+                              return _WeeklyStatsCard(
+                                stats: stats,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => WeeklyOverviewPage(scans: scans, stats: stats),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: _editName,
-                    child: Icon(Icons.edit, size: 18, color: isDark ? Colors.grey.shade400 : Colors.grey),
+                  // Right column: recent scans
+                  Expanded(
+                    flex: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 24, 32, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                AppStrings.recentScans,
+                                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(width: 12),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                FutureBuilder<List<ScanResult>>(
+                                  future: _scansFuture,
+                                  builder: (context, snap) {
+                                    final items = snap.data ?? [];
+                                    if (snap.connectionState == ConnectionState.waiting) {
+                                      return const Center(child: CircularProgressIndicator());
+                                    }
+                                    if (items.isEmpty) {
+                                      return const Center(child: Text(AppStrings.noScansYet));
+                                    }
+                                    return ListView.builder(
+                                      padding: const EdgeInsets.only(bottom: 180),
+                                      itemCount: items.length,
+                                      itemBuilder: (ctx, idx) {
+                                        final s = items[idx];
+                                        return Padding(
+                                          padding: const EdgeInsets.only(bottom: 10.0),
+                                          child: ProductTile(
+                                            title: s.product.name,
+                                            subtitle: s.product.brand,
+                                            score: s.score,
+                                            timestamp: s.timestamp,
+                                            labels: s.product.labels,
+                                            mealType: s.mealType,
+                                            onTap: () {
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) => ProductDetailsPage(scanResult: s, showAddToList: false),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 18),
-              // Weekly stats card
-              FutureBuilder<List<ScanResult>>(
-                future: _scansFuture,
-                builder: (context, snap) {
-                  final scans = snap.data ?? [];
-                  final stats = ComputeWeeklyStats()(scans);
-                  return _WeeklyStatsCard(
-                    stats: stats,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              WeeklyOverviewPage(scans: scans, stats: stats),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                AppStrings.recentScans,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: Stack(
+              );
+            } else {
+              // Phone/small screen: single column
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const SizedBox(height: 8),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Center(
+                          child: VitaSnapLogo(fontSize: 22, showTagline: true),
+                        ),
+                        Positioned(
+                          right: 0,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                onPressed: () {},
+                                icon: const Icon(Icons.notifications_outlined),
+                                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                              ),
+                              IconButton(
+                                onPressed: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ProfilePage(),
+                                    ),
+                                  );
+                                  _refreshScans();
+                                },
+                                icon: const Icon(Icons.settings_outlined),
+                                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: '${_getGreeting()}, ',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.normal,
+                                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  ),
+                                ),
+                                TextSpan(text: _userName),
+                              ],
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _editName,
+                          child: Icon(Icons.edit, size: 18, color: isDark ? Colors.grey.shade400 : Colors.grey),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
                     FutureBuilder<List<ScanResult>>(
                       future: _scansFuture,
                       builder: (context, snap) {
-                        final items = snap.data ?? [];
-                        if (snap.connectionState == ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (items.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              AppStrings.noScansYet,
-                            ),
-                          );
-                        }
-                        return ListView.builder(
-                          padding: const EdgeInsets.only(bottom: 120),
-                          itemCount: items.length,
-                          itemBuilder: (ctx, idx) {
-                            final s = items[idx];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 10.0),
-                              child: ProductTile(
-                                title: s.product.name,
-                                subtitle: s.product.brand,
-                                score: s.score,
-                                timestamp: s.timestamp,
-                                labels: s.product.labels,
-                                mealType: s.mealType,
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          ProductDetailsPage(scanResult: s, showAddToList: false),
-                                    ),
-                                  );
-                                },
+                        final scans = snap.data ?? [];
+                        final stats = ComputeWeeklyStats()(scans);
+                        return _WeeklyStatsCard(
+                          stats: stats,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => WeeklyOverviewPage(scans: scans, stats: stats),
                               ),
                             );
                           },
                         );
                       },
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: _showSearch
-          ? // Search mode: show search field + search button, hide scan
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color.fromRGBO(0, 0, 0, 0.1),
-                            blurRadius: 8,
+                    const SizedBox(height: 18),
+                    const Text(
+                      AppStrings.recentScans,
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          FutureBuilder<List<ScanResult>>(
+                            future: _scansFuture,
+                            builder: (context, snap) {
+                              final items = snap.data ?? [];
+                              if (snap.connectionState == ConnectionState.waiting) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+                              if (items.isEmpty) {
+                                return const Center(child: Text(AppStrings.noScansYet));
+                              }
+                              return ListView.builder(
+                                padding: const EdgeInsets.only(bottom: 180),
+                                itemCount: items.length,
+                                itemBuilder: (ctx, idx) {
+                                  final s = items[idx];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 10.0),
+                                    child: ProductTile(
+                                      title: s.product.name,
+                                      subtitle: s.product.brand,
+                                      score: s.score,
+                                      timestamp: s.timestamp,
+                                      labels: s.product.labels,
+                                      mealType: s.mealType,
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) => ProductDetailsPage(scanResult: s, showAddToList: false),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
+                              );
+                            },
                           ),
                         ],
                       ),
-                      child: TextField(
-                        controller: _searchController,
-                        autofocus: true,
-                        decoration: const InputDecoration(
-                          hintText: AppStrings.searchByNameOrBarcode,
-                          prefixIcon: Icon(Icons.search),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: SafeArea(
+        child: _showSearch
+            ? Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color.fromRGBO(0, 0, 0, 0.1),
+                              blurRadius: 8,
+                            ),
+                          ],
                         ),
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: (_) => _doSearch(),
+                        child: TextField(
+                          controller: _searchController,
+                          autofocus: true,
+                          decoration: const InputDecoration(
+                            hintText: AppStrings.searchByNameOrBarcode,
+                            prefixIcon: Icon(Icons.search),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                          ),
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: (_) => _doSearch(),
+                        ),
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    FloatingActionButton(
+                      heroTag: 'search_go_fab',
+                      onPressed: _doSearch,
+                      backgroundColor: const Color(0xFF00C17B),
+                      child: const Icon(Icons.arrow_forward, size: 24),
+                    ),
+                    const SizedBox(width: 8),
+                    FloatingActionButton(
+                      heroTag: 'search_close_fab',
+                      mini: true,
+                      onPressed: () => setState(() {
+                        _showSearch = false;
+                        _searchController.clear();
+                      }),
+                      backgroundColor: Colors.grey.shade400,
+                      child: const Icon(Icons.close, size: 20),
+                    ),
+                  ],
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FloatingActionButton(
+                    heroTag: 'search_fab',
+                    onPressed: () => setState(() => _showSearch = true),
+                    backgroundColor: const Color(0xFF00C17B),
+                    elevation: 4,
+                    child: const Icon(
+                      Icons.search,
+                      color: Colors.white,
+                      size: 26,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  FloatingActionButton(
-                    heroTag: 'search_go_fab',
-                    onPressed: _doSearch,
+                  FloatingActionButton.extended(
+                    heroTag: 'scan_fab',
+                    onPressed: () async {
+                      final res = await Navigator.of(context)
+                          .push<Map<String, dynamic>>(
+                            MaterialPageRoute(
+                              builder: (_) => const BarcodeScannerWidget(),
+                            ),
+                          );
+                      if (res != null && res['added'] == true) {
+                        _refreshScans();
+                      }
+                    },
                     backgroundColor: const Color(0xFF00C17B),
-                    child: const Icon(Icons.arrow_forward, size: 24),
-                  ),
-                  const SizedBox(width: 8),
-                  FloatingActionButton(
-                    heroTag: 'search_close_fab',
-                    mini: true,
-                    onPressed: () => setState(() {
-                      _showSearch = false;
-                      _searchController.clear();
-                    }),
-                    backgroundColor: Colors.grey.shade400,
-                    child: const Icon(Icons.close, size: 20),
+                    icon: const Icon(Icons.qr_code_scanner, size: 24),
+                    label: const Text(AppStrings.scanIt),
                   ),
                 ],
               ),
-            )
-          : // Normal mode: show search + scan buttons
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Search FAB
-                FloatingActionButton(
-                  heroTag: 'search_fab',
-                  onPressed: () => setState(() => _showSearch = true),
-                  backgroundColor: const Color(0xFF00C17B),
-                  elevation: 4,
-                  child: const Icon(
-                    Icons.search,
-                    color: Colors.white,
-                    size: 26,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Scan FAB
-                FloatingActionButton.extended(
-                  heroTag: 'scan_fab',
-                  onPressed: () async {
-                    final res = await Navigator.of(context)
-                        .push<Map<String, dynamic>>(
-                          MaterialPageRoute(
-                            builder: (_) => const BarcodeScannerWidget(),
-                          ),
-                        );
-                    // Refresh list if product was added
-                    if (res != null && res['added'] == true) {
-                      _refreshScans();
-                    }
-                  },
-                  backgroundColor: const Color(0xFF00C17B),
-                  icon: const Icon(Icons.qr_code_scanner, size: 24),
-                  label: const Text(AppStrings.scanIt),
-                ),
-              ],
-            ),
+      ),
     );
   }
 }

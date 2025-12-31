@@ -12,7 +12,10 @@ class AddFoodPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1A1A2E) : AppColors.backgroundLight;
+    final backgroundColor = isDark
+        ? const Color(0xFF1A1A2E)
+        : AppColors.backgroundLight;
+    final ScrollController scrollController = ScrollController();
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -24,143 +27,182 @@ class AddFoodPage extends StatelessWidget {
         foregroundColor: isDark ? Colors.white : Colors.black87,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Icon(
-                    Icons.add_circle_outline,
-                    color: AppColors.primaryGreen,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'What did you eat?',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
+        child: Scrollbar(
+          controller: scrollController,
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight:
+                      MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).padding.top -
+                      kToolbarHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.add_circle_outline,
+                            color: AppColors.primaryGreen,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'What did you eat?',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
+                                ),
+                                Text(
+                                  'Track your meals for better health insights',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      _buildOptionCard(
+                        context: context,
+                        icon: Icons.kitchen,
+                        emoji: '🍳',
+                        title: 'Build My Meal',
+                        subtitle: 'Search ingredients and track homemade meals',
+                        description:
+                            'Perfect for home cooking, snacks, and custom meals',
+                        color: AppColors.primaryGreen,
+                        isDark: isDark,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MealBuilderPage(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Divider(
+                              color: isDark ? Colors.white24 : Colors.black12,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'OR',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? Colors.white38 : Colors.black38,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(
+                              color: isDark ? Colors.white24 : Colors.black12,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      _buildOptionCard(
+                        context: context,
+                        icon: Icons.restaurant,
+                        emoji: '🍔',
+                        title: 'Restaurant Menu',
+                        subtitle:
+                            'Scan a menu or pick from popular restaurants',
+                        description:
+                            'AI analyzes menus and suggests healthier choices',
+                        color: const Color(0xFFFF6B35),
+                        isDark: isDark,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MenuScannerPage(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Push tip toward bottom when content is short
+                      const Spacer(),
+
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : AppColors.primaryGreen.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : AppColors.primaryGreen.withValues(alpha: 0.2),
                           ),
                         ),
-                        Text(
-                          'Track your meals for better health insights',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 32),
-              
-              // Option 1: Build My Meal
-              _buildOptionCard(
-                context: context,
-                icon: Icons.kitchen,
-                emoji: '🍳',
-                title: 'Build My Meal',
-                subtitle: 'Search ingredients and track homemade meals',
-                description: 'Perfect for home cooking, snacks, and custom meals',
-                color: AppColors.primaryGreen,
-                isDark: isDark,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MealBuilderPage()),
-                  );
-                },
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // OR Divider
-              Row(
-                children: [
-                  Expanded(child: Divider(color: isDark ? Colors.white24 : Colors.black12)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'OR',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white38 : Colors.black38,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: isDark ? Colors.white24 : Colors.black12)),
-                ],
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Option 2: Restaurant Menu
-              _buildOptionCard(
-                context: context,
-                icon: Icons.restaurant,
-                emoji: '🍔',
-                title: 'Restaurant Menu',
-                subtitle: 'Scan a menu or pick from popular restaurants',
-                description: 'AI analyzes menus and suggests healthier choices',
-                color: const Color(0xFFFF6B35),
-                isDark: isDark,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MenuScannerPage()),
-                  );
-                },
-              ),
-              
-              const Spacer(),
-              
-              // Tip at bottom
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark 
-                      ? Colors.white.withValues(alpha: 0.05) 
-                      : AppColors.primaryGreen.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark 
-                        ? Colors.white.withValues(alpha: 0.1) 
-                        : AppColors.primaryGreen.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.lightbulb_outline,
-                      size: 20,
-                      color: isDark ? Colors.amber : AppColors.primaryGreen,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Tip: You can also scan product barcodes from the Home screen!',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? Colors.white70 : Colors.black54,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.lightbulb_outline,
+                              size: 20,
+                              color: isDark
+                                  ? Colors.amber
+                                  : AppColors.primaryGreen,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Tip: You can also scan product barcodes from the Home screen!',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -188,10 +230,7 @@ class AddFoodPage extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF252542) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: color.withValues(alpha: 0.3),
-              width: 1.5,
-            ),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
             boxShadow: [
               BoxShadow(
                 color: color.withValues(alpha: 0.1),
@@ -211,10 +250,7 @@ class AddFoodPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Center(
-                  child: Text(
-                    emoji,
-                    style: const TextStyle(fontSize: 28),
-                  ),
+                  child: Text(emoji, style: const TextStyle(fontSize: 28)),
                 ),
               ),
               const SizedBox(width: 16),
@@ -252,11 +288,7 @@ class AddFoodPage extends StatelessWidget {
                 ),
               ),
               // Arrow
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 18,
-                color: color,
-              ),
+              Icon(Icons.arrow_forward_ios, size: 18, color: color),
             ],
           ),
         ),
