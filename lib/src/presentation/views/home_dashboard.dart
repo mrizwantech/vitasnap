@@ -84,18 +84,23 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
   }
 
   void _loadUserName() {
-    // First check if user is authenticated with Firebase
     final authService = context.read<AuthService>();
-    if (authService.isAuthenticated && authService.user?.displayName != null) {
-      final displayName = authService.user!.displayName!;
-      if (displayName.isNotEmpty) {
+    if (authService.isAuthenticated) {
+      if (authService.user?.isAnonymous == true) {
         setState(() {
-          _userName = displayName.split(' ').first; // Use first name
+          _userName = 'guest';
         });
         return;
+      } else if (authService.user?.displayName != null) {
+        final displayName = authService.user!.displayName!;
+        if (displayName.isNotEmpty) {
+          setState(() {
+            _userName = displayName.split(' ').first;
+          });
+          return;
+        }
       }
     }
-    
     // Fall back to local storage
     context.read<UserRepository>().getUserName().then((name) {
       if (!mounted) return;

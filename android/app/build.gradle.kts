@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mrizwantech.vitasnap"
+    namespace = "com.rizwantech.vitasnap"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -23,21 +23,21 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "release.keystore")
-            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("ANDROID_KEY_ALIAS")
-            keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+              storeFile = file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "release.keystore")
+              storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+              keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+              keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
         }
     }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.mrizwantech.vitasnap"
+        applicationId = "com.rizwantech.vitasnap"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
+        versionCode = flutter.versionCode + 1 // Incremented for new upload
         versionName = flutter.versionName
     }
 
@@ -45,9 +45,17 @@ android {
         release {
             signingConfig = signingConfigs.getByName("release")
         }
+        debug {
+            signingConfig = signingConfigs.getByName("release")
+        }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("com.google.android.play:integrity:1.3.0")
+    // ...existing dependencies...
 }

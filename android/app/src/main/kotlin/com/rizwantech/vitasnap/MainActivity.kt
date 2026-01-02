@@ -1,4 +1,4 @@
-package com.mrizwantech.vitasnap
+package com.rizwantech.vitasnap
 
 import io.flutter.embedding.android.FlutterActivity
 

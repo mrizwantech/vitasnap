@@ -19,6 +19,20 @@ class AuthResult {
 
 /// Firebase Authentication Service
 class AuthService extends ChangeNotifier {
+    /// Sign in anonymously (guest login)
+    Future<AuthResult> signInAnonymously() async {
+      try {
+        _setLoading(true);
+        final credential = await _auth.signInAnonymously();
+        return AuthResult.success(credential.user!);
+      } on FirebaseAuthException catch (e) {
+        return AuthResult.failure(_getErrorMessage(e.code));
+      } catch (e) {
+        return AuthResult.failure('Failed to sign in as guest');
+      } finally {
+        _setLoading(false);
+      }
+    }
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
