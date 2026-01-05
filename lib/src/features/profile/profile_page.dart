@@ -178,6 +178,90 @@ class ProfilePage extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Sign out button
+            // Delete Account button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete Account'),
+                      content: const Text('Are you sure you want to delete your account? This action cannot be undone.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && context.mounted) {
+                    Future<bool> tryDelete() async {
+                      final result = await authService.deleteAccount();
+                      if (result.success) {
+                        Navigator.of(context).popUntil((route) => route.isFirst);
+                        return true;
+                      } else if (result.error?.contains('recent-login') == true ||
+                                 result.error?.contains('requires-recent-login') == true) {
+                        // Prompt re-authentication
+                        final reauth = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Re-authentication Required'),
+                            content: const Text('For security, please sign in again to delete your account.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Re-authenticate'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (reauth == true && context.mounted) {
+                          // Try Google re-authentication (expand as needed for other providers)
+                          final reauthResult = await authService.signInWithGoogle();
+                          if (reauthResult.success) {
+                            // Retry delete
+                            return await tryDelete();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(reauthResult.error ?? 'Re-authentication failed.')),
+                            );
+                          }
+                        }
+                        return false;
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(result.error ?? 'Failed to delete account.')),
+                        );
+                        return false;
+                      }
+                    }
+                    await tryDelete();
+                  }
+                },
+                icon: const Icon(Icons.delete_forever, color: Colors.red),
+                label: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Sign Out button
             SizedBox(
               width: double.infinity,
               height: 52,

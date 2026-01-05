@@ -1,3 +1,4 @@
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
@@ -259,6 +260,29 @@ class AuthService extends ChangeNotifier {
       _setLoading(false);
     }
   }
+    /// Delete the current user account from Firebase and sign out of Google
+    Future<AuthResult> deleteAccount() async {
+      try {
+        _setLoading(true);
+        final user = _auth.currentUser;
+        if (user == null) {
+          return AuthResult.failure('No user is currently signed in.');
+        }
+        await user.delete();
+        // Sign out of Google to prevent auto-login
+        await _googleSignIn.signOut();
+        _user = null;
+        notifyListeners();
+        return AuthResult(success: true);
+      } on FirebaseAuthException catch (e) {
+        // If recent login is required, handle accordingly in UI
+        return AuthResult.failure(_getErrorMessage(e.code));
+      } catch (e) {
+        return AuthResult.failure('Failed to delete account.');
+      } finally {
+        _setLoading(false);
+      }
+    }
 
   // ==================== Helper Methods ====================
 
