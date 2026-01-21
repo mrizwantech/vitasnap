@@ -39,7 +39,6 @@ import 'src/domain/repositories/recipe_repository.dart';
 import 'src/presentation/viewmodels/scan_viewmodel.dart';
 import 'src/presentation/viewmodels/meal_builder_viewmodel.dart';
 import 'src/presentation/views/main_navigation.dart';
-import 'src/features/auth/login_page.dart';
 import 'src/features/onboarding/onboarding_page.dart';
 
 void main() async {
@@ -183,21 +182,17 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Top-level wrapper that handles auth state
+/// Top-level wrapper - direct access without login
 class AppWrapper extends StatelessWidget {
   const AppWrapper({super.key});
 
+  // Constant guest user ID for local storage keys
+  static const String guestUserId = 'guest_user';
+
   @override
   Widget build(BuildContext context) {
-    final authService = context.watch<AuthService>();
-
-    // Show login if not authenticated
-    if (!authService.isAuthenticated) {
-      return const LoginPage();
-    }
-
-    // Show onboarding/home flow for authenticated users
-    return AuthenticatedWrapper(userId: authService.user!.uid);
+    // Direct access - bypass login, use guest user ID for onboarding tracking
+    return const AuthenticatedWrapper(userId: guestUserId);
   }
 }
 

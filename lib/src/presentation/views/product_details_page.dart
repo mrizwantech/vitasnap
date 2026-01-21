@@ -7,6 +7,7 @@ import '../../core/services/favorites_service.dart';
 import '../../core/services/health_conditions_service.dart';
 import '../../domain/entities/recipe.dart'; // For MealType
 import '../../domain/entities/scan_result.dart';
+import '../../domain/usecases/compute_health_score.dart';
 import '../widgets/vitasnap_logo.dart';
 
 /// Product details page showing nutritional info with option to add or share.
@@ -198,6 +199,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     final gradeColor = _getGradeColor(grade);
     final gradeMessage = _getGradeMessage(grade);
     
+    // Get score breakdown with factors
+    final computeHealthScore = context.read<ComputeHealthScore>();
+    final scoreResult = computeHealthScore.computeWithBreakdown(product);
+    
     // Check for dietary matches and violations
     final dietaryService = context.watch<DietaryPreferencesService>();
     final dietaryResult = dietaryService.selectedRestrictions.isNotEmpty
@@ -369,6 +374,63 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         ],
                       ),
                     ),
+                    // Score factors breakdown
+                    if (scoreResult.factors.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Why this rating?',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...scoreResult.factors.map((factor) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              factor.isPositive
+                                  ? Icons.add_circle
+                                  : Icons.remove_circle,
+                              color: factor.isPositive
+                                  ? const Color(0xFF22C55E)
+                                  : const Color(0xFFEF4444),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    factor.name,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: factor.isPositive
+                                          ? const Color(0xFF22C55E)
+                                          : const Color(0xFFEF4444),
+                                    ),
+                                  ),
+                                  Text(
+                                    factor.description,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                    ],
                   ],
                 ),
               ),

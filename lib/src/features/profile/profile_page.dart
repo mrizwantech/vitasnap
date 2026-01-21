@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/services/auth_service.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/cloud_sync_service.dart';
 import '../../core/services/health_conditions_service.dart';
@@ -16,9 +15,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authService = context.watch<AuthService>();
     final themeService = context.watch<ThemeService>();
-    final user = authService.user;
     final primaryColor = const Color(0xFF1B8A4E);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -55,37 +52,30 @@ class ProfilePage extends StatelessWidget {
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: primaryColor.withValues(alpha: 0.1),
-                    backgroundImage: user?.photoURL != null
-                        ? NetworkImage(user!.photoURL!)
-                        : null,
-                    child: user?.photoURL == null
-                        ? Text(
-                            _getInitials(
-                              user?.displayName ?? user?.email ?? '?',
-                            ),
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: primaryColor,
-                            ),
-                          )
-                        : null,
+                    child: Text(
+                      'G',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
                   // Name
-                  Text(
-                    user?.displayName ?? AppStrings.user,
-                    style: const TextStyle(
+                  const Text(
+                    'Guest User',
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
 
-                  // Email or phone
+                  // Subtitle
                   Text(
-                    user?.email ?? user?.phoneNumber ?? '',
+                    'Your data is stored locally',
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
@@ -177,140 +167,6 @@ class ProfilePage extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Sign out button
-            // Delete Account button
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Delete Account'),
-                      content: const Text('Are you sure you want to delete your account? This action cannot be undone.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm == true && context.mounted) {
-                    Future<bool> tryDelete() async {
-                      final result = await authService.deleteAccount();
-                      if (result.success) {
-                        Navigator.of(context).popUntil((route) => route.isFirst);
-                        return true;
-                      } else if (result.error?.contains('recent-login') == true ||
-                                 result.error?.contains('requires-recent-login') == true) {
-                        // Prompt re-authentication
-                        final reauth = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Re-authentication Required'),
-                            content: const Text('For security, please sign in again to delete your account.'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Re-authenticate'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (reauth == true && context.mounted) {
-                          // Try Google re-authentication (expand as needed for other providers)
-                          final reauthResult = await authService.signInWithGoogle();
-                          if (reauthResult.success) {
-                            // Retry delete
-                            return await tryDelete();
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(reauthResult.error ?? 'Re-authentication failed.')),
-                            );
-                          }
-                        }
-                        return false;
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(result.error ?? 'Failed to delete account.')),
-                        );
-                        return false;
-                      }
-                    }
-                    await tryDelete();
-                  }
-                },
-                icon: const Icon(Icons.delete_forever, color: Colors.red),
-                label: const Text('Delete Account', style: TextStyle(color: Colors.red)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Sign Out button
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text(AppStrings.signOutConfirmTitle),
-                      content: const Text(AppStrings.signOutConfirmMessage),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text(AppStrings.cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text(
-                            AppStrings.signOut,
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirm == true && context.mounted) {
-                    await authService.signOut();
-                    // Pop all routes and go back to root (AuthWrapper will show login)
-                    if (context.mounted) {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                    }
-                  }
-                },
-                icon: const Icon(Icons.logout, color: Colors.red),
-                label: const Text(
-                  AppStrings.signOut,
-                  style: TextStyle(color: Colors.red),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // App version
             Text(
               '${AppStrings.appName} v1.0.0',
@@ -329,15 +185,6 @@ class ProfilePage extends StatelessWidget {
       endIndent: 16,
       color: Colors.grey.shade200,
     );
-  }
-
-  String _getInitials(String name) {
-    if (name.isEmpty) return '?';
-    final parts = name.split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name[0].toUpperCase();
   }
 }
 
