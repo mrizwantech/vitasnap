@@ -17,6 +17,8 @@ import 'src/core/services/dietary_preferences_service.dart';
 import 'src/core/services/cloud_sync_service.dart';
 import 'src/core/services/favorites_service.dart';
 import 'src/core/services/health_conditions_service.dart';
+import 'src/core/services/meal_reminder_service.dart';
+import 'src/core/services/ad_service.dart';
 import 'src/data/datasources/open_food_facts_api.dart';
 import 'src/data/datasources/usda_food_api.dart';
 import 'src/data/repositories/product_repository_impl.dart';
@@ -41,6 +43,9 @@ import 'src/presentation/viewmodels/meal_builder_viewmodel.dart';
 import 'src/presentation/views/main_navigation.dart';
 import 'src/features/onboarding/onboarding_page.dart';
 
+/// Global navigator key for handling notification navigation
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   // Use runZonedGuarded to catch all errors
   runZonedGuarded<Future<void>>(() async {
@@ -60,12 +65,26 @@ void main() async {
           ? AppleProvider.debug 
           : AppleProvider.appAttest,
     );
+    
+    // In debug mode, print App Check token for registration in Firebase Console
+    if (kDebugMode) {
+      FirebaseAppCheck.instance.onTokenChange.listen((token) {
+        debugPrint('=== APP CHECK DEBUG TOKEN ===');
+        debugPrint('Token: $token');
+        debugPrint('If AI features fail, register this token in Firebase Console:');
+        debugPrint('Firebase Console > App Check > Apps > [Your App] > Manage debug tokens');
+        debugPrint('=============================');
+      });
+    }
 
     // Initialize Crashlytics (only in release mode)
     if (!kDebugMode) {
       // Pass all uncaught "fatal" errors from the framework to Crashlytics
       FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     }
+
+    // Initialize AdMob SDK
+    await AdService.initialize();
 
     final prefs = await SharedPreferences.getInstance();
     runApp(MyApp(prefs: prefs));
@@ -157,11 +176,14 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (ctx) => CloudSyncService(ctx.read<SharedPreferences>())),
         ChangeNotifierProvider(create: (ctx) => FavoritesService(ctx.read<SharedPreferences>())),
         ChangeNotifierProvider(create: (ctx) => HealthConditionsService(ctx.read<SharedPreferences>())),
+        ChangeNotifierProvider(create: (_) => MealReminderService()),
+        ChangeNotifierProvider(create: (_) => AdService()..loadRewardedAd()),
       ],
       child: Consumer<ThemeService>(
         builder: (context, themeService, child) => MaterialApp(
           title: 'VitaSnap',
           debugShowCheckedModeBanner: false,
+          navigatorKey: navigatorKey,
           themeMode: themeService.flutterThemeMode,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
@@ -258,6 +280,21 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
     // Set user ID on cloud sync service
     final cloudSyncService = context.read<CloudSyncService>();
     cloudSyncService.setUserId(userId);
+    // Initialize meal reminder service
+    final mealReminderService = context.read<MealReminderService>();
+    mealReminderService.initialize();
+    
+    // Set up notification tap handler to navigate to home
+    MealReminderService.onNotificationTapped = () {
+      // Navigate to home page when notification is tapped
+      final navContext = navigatorKey.currentContext;
+      if (navContext != null) {
+        // Pop to root and navigate to home tab
+        navigatorKey.currentState?.popUntil((route) => route.isFirst);
+        MainNavigation.navigateToHome(navContext);
+      }
+    };
+    
     // Wire up cloud sync to scan viewmodel for auto-sync
     final scanViewModel = context.read<ScanViewModel>();
     scanViewModel.setCloudSyncService(cloudSyncService);

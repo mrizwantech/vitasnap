@@ -5,12 +5,58 @@ import '../widgets/vitasnap_logo.dart';
 import '../../features/meal_builder/meal_builder_page.dart';
 import '../../features/menu_scanner/menu_scanner_page.dart';
 
+/// Possible views within the Add Food page
+enum _AddFoodView {
+  selection,  // Initial view with Build My Meal / Restaurant options
+  mealBuilder,
+  restaurantMenu,
+}
+
 /// Landing page for adding food - choose between personal meal or restaurant
-class AddFoodPage extends StatelessWidget {
+class AddFoodPage extends StatefulWidget {
   const AddFoodPage({super.key});
 
   @override
+  State<AddFoodPage> createState() => _AddFoodPageState();
+}
+
+class _AddFoodPageState extends State<AddFoodPage> {
+  _AddFoodView _currentView = _AddFoodView.selection;
+
+  void _showMealBuilder() {
+    setState(() {
+      _currentView = _AddFoodView.mealBuilder;
+    });
+  }
+
+  void _showRestaurantMenu() {
+    setState(() {
+      _currentView = _AddFoodView.restaurantMenu;
+    });
+  }
+
+  void _showSelection() {
+    setState(() {
+      _currentView = _AddFoodView.selection;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    switch (_currentView) {
+      case _AddFoodView.mealBuilder:
+        return MealBuilderPage(
+          embedded: true,
+          onBack: _showSelection,
+        );
+      case _AddFoodView.restaurantMenu:
+        return _RestaurantMenuEmbedded(onBack: _showSelection);
+      case _AddFoodView.selection:
+        return _buildSelectionView(context);
+    }
+  }
+
+  Widget _buildSelectionView(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDark
         ? const Color(0xFF1A1A2E)
@@ -95,14 +141,7 @@ class AddFoodPage extends StatelessWidget {
                             'Perfect for home cooking, snacks, and custom meals',
                         color: AppColors.primaryGreen,
                         isDark: isDark,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MealBuilderPage(),
-                            ),
-                          );
-                        },
+                        onTap: _showMealBuilder,
                       ),
 
                       const SizedBox(height: 16),
@@ -146,14 +185,7 @@ class AddFoodPage extends StatelessWidget {
                             'AI analyzes menus and suggests healthier choices',
                         color: const Color(0xFFFF6B35),
                         isDark: isDark,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MenuScannerPage(),
-                            ),
-                          );
-                        },
+                        onTap: _showRestaurantMenu,
                       ),
 
                       const SizedBox(height: 24),
@@ -291,6 +323,46 @@ class AddFoodPage extends StatelessWidget {
               Icon(Icons.arrow_forward_ios, size: 18, color: color),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Embedded Restaurant Menu view with back button
+class _RestaurantMenuEmbedded extends StatelessWidget {
+  final VoidCallback onBack;
+
+  const _RestaurantMenuEmbedded({required this.onBack});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      color: AppColors.backgroundLight,
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Back button header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 20, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: onBack,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
+            // Menu Scanner content
+            const Expanded(
+              child: MenuScannerPage(embedded: true),
+            ),
+          ],
         ),
       ),
     );

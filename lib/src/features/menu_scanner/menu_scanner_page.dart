@@ -10,10 +10,12 @@ import '../../core/services/health_conditions_service.dart';
 import '../../core/services/dietary_preferences_service.dart';
 import '../../core/services/restaurant_database_service.dart';
 import '../../core/services/local_health_scoring_service.dart';
+import '../../core/services/ad_service.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/scan_result.dart';
 import '../../domain/entities/recipe.dart';
 import '../../domain/entities/restaurant.dart';
+import '../../domain/repositories/scan_history_repository.dart';
 import '../../presentation/viewmodels/scan_viewmodel.dart';
 import '../../presentation/views/main_navigation.dart';
 import '../../presentation/widgets/vitasnap_logo.dart';
@@ -23,7 +25,10 @@ const String _disclaimerAcceptedKey = 'menu_scanner_disclaimer_accepted';
 
 /// Page for scanning and analyzing restaurant menus
 class MenuScannerPage extends StatefulWidget {
-  const MenuScannerPage({super.key});
+  /// If true, shows without Scaffold/AppBar (for embedding in navigation)
+  final bool embedded;
+
+  const MenuScannerPage({super.key, this.embedded = false});
 
   @override
   State<MenuScannerPage> createState() => _MenuScannerPageState();
@@ -31,21 +36,24 @@ class MenuScannerPage extends StatefulWidget {
 
 class _MenuScannerPageState extends State<MenuScannerPage> {
   final MenuAnalysisService _menuService = MenuAnalysisService();
-  final RestaurantDatabaseService _restaurantService = RestaurantDatabaseService();
-  final LocalHealthScoringService _localScoringService = LocalHealthScoringService();
+  final RestaurantDatabaseService _restaurantService =
+      RestaurantDatabaseService();
+  final LocalHealthScoringService _localScoringService =
+      LocalHealthScoringService();
   final ImagePicker _imagePicker = ImagePicker();
   final TextEditingController _manualInputController = TextEditingController();
-  final TextEditingController _restaurantSearchController = TextEditingController();
-  
+  final TextEditingController _restaurantSearchController =
+      TextEditingController();
+
   MenuAnalysisResult? _analysisResult;
   bool _isLoading = false;
   String? _errorMessage;
   String _selectedFilter = 'all'; // 'all', 'best', 'caution', 'avoid'
-  
+
   // Restaurant browser state
   List<Restaurant> _restaurants = [];
   bool _loadingRestaurants = false;
-  
+
   // Disclaimer state
   bool _hasAcceptedDisclaimer = false;
 
@@ -66,7 +74,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
   /// Show disclaimer dialog and return true if user accepts
   Future<bool> _showDisclaimerIfNeeded() async {
     if (_hasAcceptedDisclaimer) return true;
-    
+
     final accepted = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -94,7 +102,9 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: const Text(
                   LocalHealthScoringService.disclaimer,
@@ -104,8 +114,11 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Icon(Icons.check_circle_outline, 
-                    color: Colors.green[700], size: 20),
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green[700],
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
@@ -118,8 +131,11 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.check_circle_outline, 
-                    color: Colors.green[700], size: 20),
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green[700],
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
@@ -148,13 +164,15 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
             ),
-            child: const Text('I Understand', 
-              style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'I Understand',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
-    
+
     if (accepted == true) {
       setState(() => _hasAcceptedDisclaimer = true);
       return true;
@@ -221,9 +239,15 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
             const SizedBox(height: 8),
             _buildInfoRow(Icons.wifi, 'Requires a stable internet connection'),
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.photo_camera, 'Use clear, well-lit photos for best results'),
+            _buildInfoRow(
+              Icons.photo_camera,
+              'Use clear, well-lit photos for best results',
+            ),
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.menu_book, 'Focus on the menu text for accurate reading'),
+            _buildInfoRow(
+              Icons.menu_book,
+              'Focus on the menu text for accurate reading',
+            ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -234,7 +258,11 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lightbulb_outline, color: Colors.amber.shade700, size: 20),
+                  Icon(
+                    Icons.lightbulb_outline,
+                    color: Colors.amber.shade700,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -260,12 +288,21 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
           ),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(context, true),
-            icon: Icon(source == ImageSource.camera ? Icons.camera_alt : Icons.photo_library, size: 18),
-            label: Text(source == ImageSource.camera ? 'Open Camera' : 'Open Gallery'),
+            icon: Icon(
+              source == ImageSource.camera
+                  ? Icons.camera_alt
+                  : Icons.photo_library,
+              size: 18,
+            ),
+            label: Text(
+              source == ImageSource.camera ? 'Open Camera' : 'Open Gallery',
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
         ],
@@ -274,6 +311,17 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
 
     if (shouldProceed != true) return;
 
+    // Show ad FIRST, then open camera after ad completes
+    final adService = context.read<AdService>();
+    await adService.showRewardedAd(
+      onRewarded: () async {
+        await _captureAndAnalyzeImage(source);
+      },
+    );
+  }
+
+  /// Captures image from camera/gallery and analyzes it (called after ad)
+  Future<void> _captureAndAnalyzeImage(ImageSource source) async {
     try {
       final XFile? image = await _imagePicker.pickImage(
         source: source,
@@ -306,10 +354,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
         Expanded(
           child: Text(
             text,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
           ),
         ),
       ],
@@ -349,6 +394,25 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
         _isLoading = false;
       });
     }
+  }
+
+  /// Shows ad then analyzes manual text input
+  Future<void> _showAdThenAnalyzeManual() async {
+    final text = _manualInputController.text.trim();
+    if (text.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter dish names';
+      });
+      return;
+    }
+
+    final adService = context.read<AdService>();
+    
+    await adService.showRewardedAd(
+      onRewarded: () {
+        _analyzeManualInput();
+      },
+    );
   }
 
   Future<void> _analyzeManualInput() async {
@@ -416,7 +480,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
 
   List<DishAnalysis> get _filteredDishes {
     if (_analysisResult == null) return [];
-    
+
     switch (_selectedFilter) {
       case 'best':
         return _analysisResult!.bestChoices;
@@ -433,6 +497,17 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
   Widget build(BuildContext context) {
     const primaryColor = AppColors.primaryGreen;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final body = _isLoading
+        ? _buildLoadingView()
+        : _analysisResult != null
+        ? _buildResultsView(primaryColor, isDark)
+        : _buildInputView(primaryColor, isDark);
+
+    // If embedded, return body without Scaffold
+    if (widget.embedded) {
+      return body;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -456,11 +531,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
             ),
         ],
       ),
-      body: _isLoading
-          ? _buildLoadingView()
-          : _analysisResult != null
-              ? _buildResultsView(primaryColor, isDark)
-              : _buildInputView(primaryColor, isDark),
+      body: body,
     );
   }
 
@@ -477,16 +548,15 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               height: 80,
               child: CircularProgressIndicator(
                 strokeWidth: 6,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.primaryGreen,
+                ),
               ),
             ),
             const SizedBox(height: 32),
             const Text(
               'Analyzing menu...',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
@@ -509,7 +579,11 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.timer_outlined, color: Colors.blue.shade700, size: 20),
+                  Icon(
+                    Icons.timer_outlined,
+                    color: Colors.blue.shade700,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'This may take 30-60 seconds',
@@ -525,10 +599,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
             const SizedBox(height: 16),
             Text(
               'Please don\'t close the app',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
             ),
           ],
         ),
@@ -608,7 +679,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
           ),
 
           const SizedBox(height: 20),
-          
+
           // Divider
           _buildOrDivider(),
           const SizedBox(height: 16),
@@ -624,7 +695,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               prefixIcon: Icon(Icons.edit_note, color: Colors.grey.shade400),
               suffixIcon: IconButton(
                 icon: Icon(Icons.send, color: primaryColor),
-                onPressed: _analyzeManualInput,
+                onPressed: _showAdThenAnalyzeManual,
                 tooltip: 'Analyze',
               ),
               border: OutlineInputBorder(
@@ -634,12 +705,15 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: primaryColor, width: 2),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
           ),
 
           const SizedBox(height: 20),
-          
+
           // Divider
           _buildOrDivider(),
           const SizedBox(height: 16),
@@ -720,10 +794,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             'or',
-            style: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
           ),
         ),
         Expanded(child: Divider(color: Colors.grey.shade300)),
@@ -772,7 +843,11 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               ),
               IconButton(
                 onPressed: _showAddRestaurantDialog,
-                icon: Icon(Icons.add_circle_outline, color: primaryColor, size: 22),
+                icon: Icon(
+                  Icons.add_circle_outline,
+                  color: primaryColor,
+                  size: 22,
+                ),
                 tooltip: 'Add restaurant',
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -790,10 +865,18 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
           decoration: InputDecoration(
             hintText: 'Search restaurants...',
             hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-            prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 20),
+            prefixIcon: Icon(
+              Icons.search,
+              color: Colors.grey.shade400,
+              size: 20,
+            ),
             suffixIcon: _restaurantSearchController.text.isNotEmpty
                 ? IconButton(
-                    icon: Icon(Icons.clear, color: Colors.grey.shade400, size: 18),
+                    icon: Icon(
+                      Icons.clear,
+                      color: Colors.grey.shade400,
+                      size: 18,
+                    ),
                     onPressed: () {
                       _restaurantSearchController.clear();
                       _loadRestaurants();
@@ -812,7 +895,10 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: primaryColor, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             isDense: true,
           ),
         ),
@@ -832,7 +918,11 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               padding: const EdgeInsets.all(32),
               child: Column(
                 children: [
-                  Icon(Icons.store_mall_directory, size: 48, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.store_mall_directory,
+                    size: 48,
+                    color: Colors.grey.shade400,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'No restaurants found',
@@ -896,7 +986,9 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: _getCategoryColor(restaurant.category).withValues(alpha: 0.1),
+                  color: _getCategoryColor(
+                    restaurant.category,
+                  ).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -1004,10 +1096,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                 children: [
                   const Text(
                     'All Restaurants',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
                   IconButton(
@@ -1027,7 +1116,9 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                   final restaurant = _restaurants[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: _getCategoryColor(restaurant.category).withValues(alpha: 0.1),
+                      backgroundColor: _getCategoryColor(
+                        restaurant.category,
+                      ).withValues(alpha: 0.1),
                       child: Icon(
                         _getCategoryIcon(restaurant.category),
                         color: _getCategoryColor(restaurant.category),
@@ -1058,7 +1149,9 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.add_business, color: Color(0xFF1B8A4E)),
@@ -1099,7 +1192,11 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                     value: cat,
                     child: Row(
                       children: [
-                        Icon(_getCategoryIcon(cat), size: 20, color: _getCategoryColor(cat)),
+                        Icon(
+                          _getCategoryIcon(cat),
+                          size: 20,
+                          color: _getCategoryColor(cat),
+                        ),
                         const SizedBox(width: 8),
                         Text(_categoryName(cat)),
                       ],
@@ -1121,11 +1218,13 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               onPressed: () async {
                 if (nameController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a restaurant name')),
+                    const SnackBar(
+                      content: Text('Please enter a restaurant name'),
+                    ),
                   );
                   return;
                 }
-                
+
                 try {
                   final newRestaurant = Restaurant(
                     id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -1143,14 +1242,19 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${nameController.text} added! You can now add menu items.'),
+                      content: Text(
+                        '${nameController.text} added! You can now add menu items.',
+                      ),
                       backgroundColor: AppColors.primaryGreen,
                     ),
                   );
                 } catch (e) {
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
               },
@@ -1188,13 +1292,16 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
     }
   }
 
-  Future<void> _analyzeRestaurantItems(Restaurant restaurant, List<MenuItem> items) async {
+  Future<void> _analyzeRestaurantItems(
+    Restaurant restaurant,
+    List<MenuItem> items,
+  ) async {
     if (items.isEmpty) return;
-    
+
     // Show disclaimer if not accepted
     final accepted = await _showDisclaimerIfNeeded();
     if (!accepted) return;
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -1204,21 +1311,23 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
       // Get user's health conditions and dietary preferences
       final healthService = context.read<HealthConditionsService>();
       final dietaryService = context.read<DietaryPreferencesService>();
-      
+
       final healthConditions = healthService.selectedConditions;
       final dietaryRestrictions = dietaryService.selectedRestrictions;
 
       // Check if items have nutrition data (use local scoring) or not (use AI)
       final hasNutritionData = items.every((item) => item.calories != null);
-      
+
       // Data source for attribution
       final dataSource = '${restaurant.name} Official Nutrition Guide';
-      
+
       MenuAnalysisResult result;
-      
+
       if (hasNutritionData) {
         // Use LOCAL scoring - instant, free, works offline!
-        debugPrint('DEBUG: Using LOCAL scoring for ${items.length} items with nutrition data');
+        debugPrint(
+          'DEBUG: Using LOCAL scoring for ${items.length} items with nutrition data',
+        );
         result = _localScoringService.analyzeMenuItems(
           items: items,
           healthConditions: healthConditions,
@@ -1227,12 +1336,16 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
         );
       } else {
         // Fall back to AI for items without nutrition data
-        debugPrint('DEBUG: Using AI scoring for ${items.length} items (missing nutrition data)');
+        debugPrint(
+          'DEBUG: Using AI scoring for ${items.length} items (missing nutrition data)',
+        );
         final dishNames = items.map((item) => item.name).toList();
         result = await _menuService.analyzeDishNames(
           dishNames: dishNames,
           healthConditions: healthConditions.map((c) => c.displayName).toList(),
-          dietaryPreferences: dietaryRestrictions.map((r) => r.displayName).toList(),
+          dietaryPreferences: dietaryRestrictions
+              .map((r) => r.displayName)
+              .toList(),
         );
       }
 
@@ -1268,7 +1381,11 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.analytics_outlined, color: primaryColor, size: 20),
+                    Icon(
+                      Icons.analytics_outlined,
+                      color: primaryColor,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     const Text(
                       'Analysis Results',
@@ -1299,13 +1416,29 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                _buildFilterChip('all', 'All (${result.dishes.length})', primaryColor),
+                _buildFilterChip(
+                  'all',
+                  'All (${result.dishes.length})',
+                  primaryColor,
+                ),
                 const SizedBox(width: 8),
-                _buildFilterChip('best', '✅ Best (${result.bestChoices.length})', Colors.green),
+                _buildFilterChip(
+                  'best',
+                  '✅ Best (${result.bestChoices.length})',
+                  Colors.green,
+                ),
                 const SizedBox(width: 8),
-                _buildFilterChip('caution', '⚠️ Caution (${result.cautionChoices.length})', Colors.orange),
+                _buildFilterChip(
+                  'caution',
+                  '⚠️ Caution (${result.cautionChoices.length})',
+                  Colors.orange,
+                ),
                 const SizedBox(width: 8),
-                _buildFilterChip('avoid', '❌ Avoid (${result.avoidChoices.length})', Colors.red),
+                _buildFilterChip(
+                  'avoid',
+                  '❌ Avoid (${result.avoidChoices.length})',
+                  Colors.red,
+                ),
               ],
             ),
           ),
@@ -1318,18 +1451,11 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.no_food,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
+                  Icon(Icons.no_food, size: 64, color: Colors.grey.shade400),
                   const SizedBox(height: 16),
                   Text(
                     'No dishes in this category',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade500,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade500),
                   ),
                 ],
               ),
@@ -1340,7 +1466,8 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, index) => _buildDishCard(filteredDishes[index], isDark, primaryColor),
+                (context, index) =>
+                    _buildDishCard(filteredDishes[index], isDark, primaryColor),
                 childCount: filteredDishes.length,
               ),
             ),
@@ -1433,11 +1560,16 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: recommendationColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: recommendationColor.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: recommendationColor.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1467,10 +1599,26 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildNutrientBadge('Cal', '${dish.estimatedCalories}', Colors.orange),
-                  _buildNutrientBadge('Protein', '${dish.estimatedProtein}g', Colors.blue),
-                  _buildNutrientBadge('Carbs', '${dish.estimatedCarbs}g', Colors.purple),
-                  _buildNutrientBadge('Fat', '${dish.estimatedFat}g', Colors.amber.shade700),
+                  _buildNutrientBadge(
+                    'Cal',
+                    '${dish.estimatedCalories}',
+                    Colors.orange,
+                  ),
+                  _buildNutrientBadge(
+                    'Protein',
+                    '${dish.estimatedProtein}g',
+                    Colors.blue,
+                  ),
+                  _buildNutrientBadge(
+                    'Carbs',
+                    '${dish.estimatedCarbs}g',
+                    Colors.purple,
+                  ),
+                  _buildNutrientBadge(
+                    'Fat',
+                    '${dish.estimatedFat}g',
+                    Colors.amber.shade700,
+                  ),
                 ],
               ),
 
@@ -1497,7 +1645,9 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                         dish.reason,
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                          color: isDark
+                              ? Colors.grey.shade300
+                              : Colors.grey.shade700,
                         ),
                       ),
                     ),
@@ -1507,13 +1657,13 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
 
               const SizedBox(height: 12),
 
-              // Add to Tracker button
+              // Add to Meal button
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () => _showAddToTrackerDialog(dish, primaryColor),
                   icon: const Icon(Icons.add_circle_outline, size: 20),
-                  label: const Text('Add to Tracker'),
+                  label: const Text('Add to Meal'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: primaryColor,
                     side: BorderSide(color: primaryColor),
@@ -1544,30 +1694,79 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey.shade500,
-          ),
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
         ),
       ],
     );
   }
 
+  /// Check if current time is appropriate for the selected meal type
+  bool _isAppropriateTimeForMeal(MealType mealType) {
+    final now = DateTime.now();
+    final hour = now.hour;
+
+    switch (mealType) {
+      case MealType.breakfast:
+        return hour >= 5 && hour < 11; // 5am - 11am
+      case MealType.lunch:
+        return hour >= 11 && hour < 15; // 11am - 3pm
+      case MealType.dinner:
+        return hour >= 17 && hour < 22; // 5pm - 10pm
+      case MealType.snack:
+        return true; // Snacks are always appropriate
+    }
+  }
+
+  /// Get the suggested meal type based on current time
+  MealType _getSuggestedMealType() {
+    final now = DateTime.now();
+    final hour = now.hour;
+
+    if (hour >= 5 && hour < 11) return MealType.breakfast;
+    if (hour >= 11 && hour < 15) return MealType.lunch;
+    if (hour >= 17 && hour < 22) return MealType.dinner;
+    return MealType.snack;
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
+  bool _isYesterday(DateTime date) {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day;
+  }
+
   /// Show dialog to select meal type and add dish to tracker
   void _showAddToTrackerDialog(DishAnalysis dish, Color primaryColor) {
-    MealType selectedMealType = MealType.lunch;
+    MealType selectedMealType = _getSuggestedMealType();
+    DateTime selectedDate = DateTime.now();
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final isPastDate = !_isToday(selectedDate);
+            final isUnusualTime =
+                !_isAppropriateTimeForMeal(selectedMealType) &&
+                _isToday(selectedDate);
+            final suggestedMeal = _getSuggestedMealType();
+
             return Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1588,21 +1787,122 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
 
                   // Title
                   Text(
-                    'Add "${dish.name}" to Tracker',
+                    'Add "${dish.name}" to Meal',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
+
+                  // Date picker row
+                  Row(
+                    children: [
+                      const Text(
+                        'Date: ',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate,
+                              firstDate: DateTime.now().subtract(
+                                const Duration(days: 30),
+                              ),
+                              lastDate: DateTime.now(),
+                              helpText: 'Select date for this meal',
+                            );
+                            if (picked != null) {
+                              setModalState(() => selectedDate = picked);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade400),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.calendar_today,
+                                  size: 18,
+                                  color: primaryColor,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _isToday(selectedDate)
+                                      ? 'Today'
+                                      : _isYesterday(selectedDate)
+                                      ? 'Yesterday'
+                                      : '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: _isToday(selectedDate)
+                                        ? Colors.black87
+                                        : primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Unusual time warning
+                  if (isUnusualTime)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orange.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.access_time,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'It\'s not typical ${selectedMealType.displayName.toLowerCase()} time. Consider ${suggestedMeal.displayName} or select a past date.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   Text(
                     'Select meal type:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
 
                   // Meal type chips
                   Wrap(
@@ -1610,27 +1910,58 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                     runSpacing: 8,
                     children: MealType.values.map((type) {
                       final isSelected = selectedMealType == type;
+                      // Block future meals only if adding for today
+                      final isFuture = _isToday(selectedDate) && type.isFutureForToday;
                       return ChoiceChip(
                         selected: isSelected,
+                        avatar: isFuture
+                            ? Icon(Icons.schedule, size: 14, color: Colors.grey.shade500)
+                            : null,
                         label: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(type.emoji),
+                            Text(
+                              type.emoji,
+                              style: TextStyle(
+                                color: isFuture ? Colors.grey : null,
+                              ),
+                            ),
                             const SizedBox(width: 4),
                             Text(type.displayName),
                           ],
                         ),
-                        selectedColor: primaryColor.withValues(alpha: 0.2),
-                        backgroundColor: Colors.grey.shade100,
+                        selectedColor: isFuture
+                            ? Colors.grey.shade300
+                            : primaryColor.withValues(alpha: 0.2),
+                        backgroundColor: isFuture
+                            ? Colors.grey.shade200
+                            : Colors.grey.shade100,
                         labelStyle: TextStyle(
-                          color: isSelected ? primaryColor : Colors.grey.shade700,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isFuture
+                              ? Colors.grey.shade500
+                              : isSelected
+                                  ? primaryColor
+                                  : Colors.grey.shade700,
+                          fontWeight: isSelected && !isFuture
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
-                        onSelected: (_) {
-                          setModalState(() {
-                            selectedMealType = type;
-                          });
-                        },
+                        onSelected: isFuture
+                            ? (_) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "Can't log ${type.displayName} yet - select a past date or wait until ${type.typicalStartHour}:00",
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            : (_) {
+                                setModalState(() {
+                                  selectedMealType = type;
+                                });
+                              },
                       );
                     }).toList(),
                   ),
@@ -1643,10 +1974,14 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        _addDishToTracker(dish, selectedMealType);
+                        _addDishToTracker(dish, selectedMealType, selectedDate);
                       },
                       icon: const Icon(Icons.add),
-                      label: Text('Add to ${selectedMealType.displayName}'),
+                      label: Text(
+                        isPastDate
+                            ? 'Add to ${selectedMealType.displayName} (${_isYesterday(selectedDate) ? "Yesterday" : "${selectedDate.day}/${selectedDate.month}"})'
+                            : 'Add to ${selectedMealType.displayName}',
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
@@ -1668,45 +2003,188 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
   }
 
   /// Add dish to tracker (scan history)
-  Future<void> _addDishToTracker(DishAnalysis dish, MealType mealType) async {
-    // Create a Product from dish analysis
-    final product = Product(
-      barcode: 'menu_${DateTime.now().millisecondsSinceEpoch}',
-      name: dish.name,
-      brand: 'Restaurant Menu',
-      imageUrl: null,
-      ingredients: dish.description,
-      nutriments: {
-        'energy-kcal_100g': dish.estimatedCalories.toDouble(),
-        'proteins_100g': dish.estimatedProtein.toDouble(),
-        'carbohydrates_100g': dish.estimatedCarbs.toDouble(),
-        'fat_100g': dish.estimatedFat.toDouble(),
-        'sodium_100g': dish.estimatedSodium.toDouble() / 1000, // Convert mg to g
-      },
-      labels: ['Menu Scanner', dish.recommendation.displayName],
-    );
-
+  /// Merges with existing meal of the same type and date if one exists
+  Future<void> _addDishToTracker(
+    DishAnalysis dish,
+    MealType mealType,
+    DateTime mealDate,
+  ) async {
     // Calculate score based on recommendation
-    int score;
+    // Aligned with LocalHealthScoringService: A=80, B=65, C=50, D=35, E=20
+    int dishScore;
     switch (dish.recommendation) {
       case DishRecommendation.best:
-        score = 85;
+        dishScore = 80; // Matches Health Rating A
         break;
       case DishRecommendation.caution:
-        score = 60;
+        dishScore = 50; // Matches Health Rating C (neutral)
         break;
       case DishRecommendation.avoid:
-        score = 35;
+        dishScore = 25; // Between Health Rating D (35) and E (20)
         break;
     }
 
-    final scanResult = ScanResult(
-      product: product,
-      score: score,
-      mealType: mealType,
+    // Create MealItem for this dish
+    final newMealItem = MealItem(
+      name: dish.name,
+      category: 'Restaurant Menu',
+      quantity: 1,
+      unit: 'serving',
+      score: dishScore,
+      nutrition: {
+        'calories': dish.estimatedCalories.toDouble(),
+        'protein': dish.estimatedProtein.toDouble(),
+        'carbs': dish.estimatedCarbs.toDouble(),
+        'fat': dish.estimatedFat.toDouble(),
+        'sodium': dish.estimatedSodium.toDouble(),
+      },
     );
 
-    // Add to scan history via ScanViewModel
+    // Check if there's already a meal of this type for the selected date
+    final historyRepo = context.read<ScanHistoryRepository>();
+    final existingMeal = await historyRepo.findMealByTypeAndDate(
+      mealType,
+      mealDate,
+    );
+
+    // Merge with existing meal if one exists
+    List<MealItem> allMealItems;
+    String existingBarcode = 'menu_${DateTime.now().millisecondsSinceEpoch}';
+
+    if (existingMeal != null) {
+      existingBarcode = existingMeal.product.barcode;
+      if (existingMeal.mealItems != null &&
+          existingMeal.mealItems!.isNotEmpty) {
+        // Existing meal already has mealItems, just append new one
+        allMealItems = [...existingMeal.mealItems!, newMealItem];
+      } else {
+        // Existing meal was scanned directly (no mealItems), convert it to a MealItem first
+        final existingProduct = existingMeal.product;
+        final existingNutriments = existingProduct.nutriments ?? {};
+        final existingMealItem = MealItem(
+          name: existingProduct.name,
+          category: existingProduct.brand ?? '',
+          quantity: 1,
+          unit: 'serving',
+          score: existingMeal.score,
+          nutrition: {
+            'calories':
+                (existingNutriments['energy-kcal_100g'] ??
+                        existingNutriments['energy-kcal'] ??
+                        0)
+                    .toDouble(),
+            'protein':
+                (existingNutriments['proteins_100g'] ??
+                        existingNutriments['proteins'] ??
+                        0)
+                    .toDouble(),
+            'carbs':
+                (existingNutriments['carbohydrates_100g'] ??
+                        existingNutriments['carbohydrates'] ??
+                        0)
+                    .toDouble(),
+            'fat':
+                (existingNutriments['fat_100g'] ??
+                        existingNutriments['fat'] ??
+                        0)
+                    .toDouble(),
+            'sodium':
+                (existingNutriments['sodium_100g'] ??
+                        existingNutriments['sodium'] ??
+                        0)
+                    .toDouble() *
+                1000,
+          },
+        );
+        allMealItems = [existingMealItem, newMealItem];
+      }
+    } else {
+      allMealItems = [newMealItem];
+    }
+
+    // Calculate combined nutrition
+    final combinedNutrition = <String, double>{
+      'calories': 0,
+      'protein': 0,
+      'carbs': 0,
+      'fat': 0,
+      'sodium': 0,
+    };
+
+    for (final item in allMealItems) {
+      for (final key in combinedNutrition.keys) {
+        combinedNutrition[key] =
+            (combinedNutrition[key] ?? 0) + (item.nutrition[key] ?? 0);
+      }
+    }
+
+    // Calculate average score
+    final avgScore = allMealItems.isEmpty
+        ? 50
+        : (allMealItems.map((e) => e.score).reduce((a, b) => a + b) /
+                  allMealItems.length)
+              .round();
+
+    // Create a combined name from all items
+    final mealName = allMealItems.length == 1
+        ? allMealItems.first.name
+        : '${mealType.displayName} (${allMealItems.length} items)';
+
+    final nutriments = <String, dynamic>{
+      'energy-kcal_100g': combinedNutrition['calories'] ?? 0,
+      'proteins_100g': combinedNutrition['protein'] ?? 0,
+      'carbohydrates_100g': combinedNutrition['carbs'] ?? 0,
+      'fat_100g': combinedNutrition['fat'] ?? 0,
+      'sodium_100g':
+          (combinedNutrition['sodium'] ?? 0) / 1000, // Convert mg to g
+    };
+
+    // Use meal date with appropriate time for the meal type
+    DateTime mealTimestamp;
+    if (_isToday(mealDate)) {
+      // For today, always use current time so it shows as "just now"
+      mealTimestamp = DateTime.now();
+    } else {
+      // For past dates, set time based on meal type
+      int hour;
+      switch (mealType) {
+        case MealType.breakfast:
+          hour = 8;
+          break;
+        case MealType.lunch:
+          hour = 12;
+          break;
+        case MealType.dinner:
+          hour = 19;
+          break;
+        case MealType.snack:
+          hour = 15;
+          break;
+      }
+      mealTimestamp =
+          DateTime(mealDate.year, mealDate.month, mealDate.day, hour);
+    }
+
+    // Create combined Product
+    final product = Product(
+      barcode: existingBarcode,
+      name: mealName,
+      brand: 'Restaurant Menu',
+      imageUrl: null,
+      ingredients: allMealItems.map((e) => e.name).join(', '),
+      nutriments: nutriments,
+      labels: ['Menu Scanner'],
+    );
+
+    final scanResult = ScanResult(
+      product: product,
+      score: avgScore,
+      mealType: mealType,
+      timestamp: mealTimestamp,
+      mealItems: allMealItems,
+    );
+
+    // Add to scan history via ScanViewModel (this will replace existing if same barcode)
     final scanViewModel = context.read<ScanViewModel>();
     await scanViewModel.addToHistory(scanResult);
 
@@ -1717,8 +2195,18 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
       _manualInputController.clear();
     });
 
-    // Show success message and navigate to home
+    // Show success message
     if (mounted) {
+      final dateLabel = _isToday(mealDate)
+          ? ''
+          : _isYesterday(mealDate)
+          ? ' (Yesterday)'
+          : ' (${mealDate.day}/${mealDate.month})';
+
+      final itemCountText = allMealItems.length > 1
+          ? ' - ${allMealItems.length} items total'
+          : '';
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -1726,7 +2214,9 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
               Text(mealType.emoji),
               const SizedBox(width: 8),
               Expanded(
-                child: Text('${dish.name} added to ${mealType.displayName}'),
+                child: Text(
+                  '${dish.name} added to ${mealType.displayName}$dateLabel$itemCountText',
+                ),
               ),
             ],
           ),
@@ -1770,7 +2260,9 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
           return Container(
             decoration: BoxDecoration(
               color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             child: ListView(
               controller: scrollController,
@@ -1803,7 +2295,10 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: recommendationColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -1834,10 +2329,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                   const SizedBox(height: 8),
                   Text(
                     dish.description,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
                   ),
                 ],
 
@@ -1846,27 +2338,41 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                 // Nutrition details
                 const Text(
                   'Estimated Nutrition',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
-                _buildNutritionRow('Calories', '${dish.estimatedCalories} kcal', Colors.orange),
-                _buildNutritionRow('Protein', '${dish.estimatedProtein}g', Colors.blue),
-                _buildNutritionRow('Carbohydrates', '${dish.estimatedCarbs}g', Colors.purple),
-                _buildNutritionRow('Fat', '${dish.estimatedFat}g', Colors.amber.shade700),
-                _buildNutritionRow('Sodium', '${dish.estimatedSodium}mg', Colors.red.shade400),
+                _buildNutritionRow(
+                  'Calories',
+                  '${dish.estimatedCalories} kcal',
+                  Colors.orange,
+                ),
+                _buildNutritionRow(
+                  'Protein',
+                  '${dish.estimatedProtein}g',
+                  Colors.blue,
+                ),
+                _buildNutritionRow(
+                  'Carbohydrates',
+                  '${dish.estimatedCarbs}g',
+                  Colors.purple,
+                ),
+                _buildNutritionRow(
+                  'Fat',
+                  '${dish.estimatedFat}g',
+                  Colors.amber.shade700,
+                ),
+                _buildNutritionRow(
+                  'Sodium',
+                  '${dish.estimatedSodium}mg',
+                  Colors.red.shade400,
+                ),
 
                 const SizedBox(height: 24),
 
                 // Recommendation reason
                 const Text(
                   'Why This Recommendation',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -1874,13 +2380,17 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                   decoration: BoxDecoration(
                     color: recommendationColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: recommendationColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: recommendationColor.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Text(
                     dish.reason,
                     style: TextStyle(
                       fontSize: 15,
-                      color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                      color: isDark
+                          ? Colors.grey.shade300
+                          : Colors.grey.shade700,
                     ),
                   ),
                 ),
@@ -1890,10 +2400,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                   const SizedBox(height: 24),
                   const Text(
                     'Health Tips',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   Container(
@@ -1901,7 +2408,9 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                     decoration: BoxDecoration(
                       color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: Colors.blue.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1913,7 +2422,9 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                             dish.healthTips!,
                             style: TextStyle(
                               fontSize: 15,
-                              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                              color: isDark
+                                  ? Colors.grey.shade300
+                                  : Colors.grey.shade700,
                             ),
                           ),
                         ),
@@ -1924,7 +2435,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
 
                 const SizedBox(height: 24),
 
-                // Add to Tracker button
+                // Add to Meal button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -1933,7 +2444,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
                       _showAddToTrackerDialog(dish, primaryColor);
                     },
                     icon: const Icon(Icons.add_circle_outline),
-                    label: const Text('Add to Tracker'),
+                    label: const Text('Add to Meal'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
@@ -1968,12 +2479,7 @@ class _MenuScannerPageState extends State<MenuScannerPage> {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 15),
-            ),
-          ),
+          Expanded(child: Text(label, style: const TextStyle(fontSize: 15))),
           Text(
             value,
             style: TextStyle(
@@ -2007,12 +2513,16 @@ class _RestaurantMenuSheetState extends State<_RestaurantMenuSheet> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _newItemNameController = TextEditingController();
-  final TextEditingController _newItemCaloriesController = TextEditingController();
+  final TextEditingController _newItemCaloriesController =
+      TextEditingController();
 
   List<MenuItem> get _filteredItems {
     if (_searchQuery.isEmpty) return widget.restaurant.menuItems;
     return widget.restaurant.menuItems
-        .where((item) => item.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (item) =>
+              item.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
@@ -2027,7 +2537,7 @@ class _RestaurantMenuSheetState extends State<_RestaurantMenuSheet> {
   @override
   Widget build(BuildContext context) {
     const primaryColor = AppColors.primaryGreen;
-    
+
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,
@@ -2040,7 +2550,9 @@ class _RestaurantMenuSheetState extends State<_RestaurantMenuSheet> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: primaryColor.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2155,7 +2667,11 @@ class _RestaurantMenuSheetState extends State<_RestaurantMenuSheet> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.search_off, size: 48, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.search_off,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           'No items found',
@@ -2203,7 +2719,9 @@ class _RestaurantMenuSheetState extends State<_RestaurantMenuSheet> {
                       ? null
                       : () {
                           final selectedItems = widget.restaurant.menuItems
-                              .where((item) => _selectedItemIds.contains(item.id))
+                              .where(
+                                (item) => _selectedItemIds.contains(item.id),
+                              )
                               .toList();
                           widget.onAnalyze(selectedItems);
                         },
@@ -2265,9 +2783,13 @@ class _RestaurantMenuSheetState extends State<_RestaurantMenuSheet> {
                 height: 24,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isSelected ? AppColors.primaryGreen : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : Colors.transparent,
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryGreen : Colors.grey.shade400,
+                    color: isSelected
+                        ? AppColors.primaryGreen
+                        : Colors.grey.shade400,
                     width: 2,
                   ),
                 ),
@@ -2306,7 +2828,10 @@ class _RestaurantMenuSheetState extends State<_RestaurantMenuSheet> {
               // Nutrition info
               if (item.calories != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -2390,7 +2915,9 @@ class _RestaurantMenuSheetState extends State<_RestaurantMenuSheet> {
               }
 
               final caloriesText = _newItemCaloriesController.text.trim();
-              final calories = caloriesText.isNotEmpty ? int.tryParse(caloriesText) : null;
+              final calories = caloriesText.isNotEmpty
+                  ? int.tryParse(caloriesText)
+                  : null;
 
               final newItem = MenuItem(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -2400,8 +2927,10 @@ class _RestaurantMenuSheetState extends State<_RestaurantMenuSheet> {
 
               try {
                 final restaurantService = RestaurantDatabaseService();
-                await restaurantService.addMenuItems(widget.restaurant.id, [newItem]);
-                
+                await restaurantService.addMenuItems(widget.restaurant.id, [
+                  newItem,
+                ]);
+
                 // Add to local list
                 setState(() {
                   widget.restaurant.menuItems.add(newItem);
@@ -2416,7 +2945,10 @@ class _RestaurantMenuSheetState extends State<_RestaurantMenuSheet> {
                 );
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: Colors.red,
+                  ),
                 );
               }
             },

@@ -349,6 +349,40 @@ enum MealType {
         return '🍎';
     }
   }
+
+  /// Get the typical start hour for this meal type
+  int get typicalStartHour {
+    switch (this) {
+      case MealType.breakfast:
+        return 5;  // 5 AM
+      case MealType.lunch:
+        return 11; // 11 AM
+      case MealType.dinner:
+        return 17; // 5 PM
+      case MealType.snack:
+        return 0;  // Anytime
+    }
+  }
+
+  /// Check if this meal type is in the future for today
+  /// Returns true if the current time hasn't reached the typical meal time yet
+  bool get isFutureForToday {
+    // Snacks can be added anytime
+    if (this == MealType.snack) return false;
+    
+    final now = DateTime.now();
+    final currentHour = now.hour;
+    
+    return currentHour < typicalStartHour;
+  }
+
+  /// Get the current appropriate meal type based on time of day
+  static MealType getCurrentMealType() {
+    final hour = DateTime.now().hour;
+    if (hour < 11) return MealType.breakfast;
+    if (hour < 17) return MealType.lunch;
+    return MealType.dinner;
+  }
 }
 
 enum HealthScoreRating {

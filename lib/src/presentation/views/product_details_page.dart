@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/services/dietary_preferences_service.dart';
 import '../../core/services/favorites_service.dart';
 import '../../core/services/health_conditions_service.dart';
+import '../../domain/entities/product.dart';
 import '../../domain/entities/recipe.dart'; // For MealType
 import '../../domain/entities/scan_result.dart';
 import '../../domain/usecases/compute_health_score.dart';
@@ -53,7 +54,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       ingredients: product.ingredients,
     );
 
-    if ((result.violations.isNotEmpty || result.matches.isNotEmpty) && mounted) {
+    if ((result.violations.isNotEmpty || result.matches.isNotEmpty) &&
+        mounted) {
       _showDietaryAlert(matches: result.matches, violations: result.violations);
     }
   }
@@ -64,19 +66,25 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }) {
     final primaryColor = const Color(0xFF1B8A4E);
     final hasViolations = violations.isNotEmpty;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         icon: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: hasViolations ? Colors.orange.shade100 : Colors.green.shade100,
+            color: hasViolations
+                ? Colors.orange.shade100
+                : Colors.green.shade100,
             shape: BoxShape.circle,
           ),
           child: Icon(
-            hasViolations ? Icons.warning_amber_rounded : Icons.check_circle_outline,
-            color: hasViolations ? Colors.orange.shade700 : Colors.green.shade700,
+            hasViolations
+                ? Icons.warning_amber_rounded
+                : Icons.check_circle_outline,
+            color: hasViolations
+                ? Colors.orange.shade700
+                : Colors.green.shade700,
             size: 32,
           ),
         ),
@@ -96,39 +104,41 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              ...matches.map((v) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(8),
+              ...matches.map(
+                (v) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          v.icon,
+                          color: Colors.green.shade600,
+                          size: 18,
+                        ),
                       ),
-                      child: Icon(
-                        v.icon,
+                      const SizedBox(width: 12),
+                      Text(
+                        v.displayName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.check_circle,
                         color: Colors.green.shade600,
                         size: 18,
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      v.displayName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.green.shade700,
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(
-                      Icons.check_circle,
-                      color: Colors.green.shade600,
-                      size: 18,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              )),
+              ),
             ],
             // Show violations (red)
             if (violations.isNotEmpty) ...[
@@ -142,49 +152,44 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              ...violations.map((v) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
+              ...violations.map(
+                (v) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          v.icon,
+                          color: Colors.red.shade600,
+                          size: 18,
+                        ),
                       ),
-                      child: Icon(
-                        v.icon,
-                        color: Colors.red.shade600,
-                        size: 18,
+                      const SizedBox(width: 12),
+                      Text(
+                        v.displayName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.red.shade700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      v.displayName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.red.shade700,
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(
-                      Icons.cancel,
-                      color: Colors.red.shade600,
-                      size: 18,
-                    ),
-                  ],
+                      const Spacer(),
+                      Icon(Icons.cancel, color: Colors.red.shade600, size: 18),
+                    ],
+                  ),
                 ),
-              )),
+              ),
             ],
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Got it',
-              style: TextStyle(color: primaryColor),
-            ),
+            child: Text('Got it', style: TextStyle(color: primaryColor)),
           ),
         ],
       ),
@@ -198,11 +203,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     final grade = _getGrade(score);
     final gradeColor = _getGradeColor(grade);
     final gradeMessage = _getGradeMessage(grade);
-    
+
     // Get score breakdown with factors
     final computeHealthScore = context.read<ComputeHealthScore>();
     final scoreResult = computeHealthScore.computeWithBreakdown(product);
-    
+
     // Check for dietary matches and violations
     final dietaryService = context.watch<DietaryPreferencesService>();
     final dietaryResult = dietaryService.selectedRestrictions.isNotEmpty
@@ -237,7 +242,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           child: Column(
             children: [
               // Dietary info banner (shows matches and violations)
-              if (dietaryResult.matches.isNotEmpty || dietaryResult.violations.isNotEmpty) ...[
+              if (dietaryResult.matches.isNotEmpty ||
+                  dietaryResult.violations.isNotEmpty) ...[
                 _DietaryInfoBanner(
                   matches: dietaryResult.matches,
                   violations: dietaryResult.violations,
@@ -374,62 +380,153 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         ],
                       ),
                     ),
-                    // Score factors breakdown
-                    if (scoreResult.factors.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      const Divider(),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Why this rating?',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                    // Score source indicator
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scoreResult.nutriscoreGrade != null
+                            ? Colors.blue.shade50
+                            : Colors.purple.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: scoreResult.nutriscoreGrade != null
+                              ? Colors.blue.shade200
+                              : Colors.purple.shade200,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      ...scoreResult.factors.map((factor) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              factor.isPositive
-                                  ? Icons.add_circle
-                                  : Icons.remove_circle,
-                              color: factor.isPositive
-                                  ? const Color(0xFF22C55E)
-                                  : const Color(0xFFEF4444),
-                              size: 18,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            scoreResult.nutriscoreGrade != null
+                                ? Icons.verified
+                                : Icons.calculate,
+                            size: 14,
+                            color: scoreResult.nutriscoreGrade != null
+                                ? Colors.blue.shade700
+                                : Colors.purple.shade700,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            scoreResult.nutriscoreGrade != null
+                                ? 'Nutri-Score ${scoreResult.nutriscoreGrade!.toUpperCase()}'
+                                : 'VitaSnap Analysis',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: scoreResult.nutriscoreGrade != null
+                                  ? Colors.blue.shade700
+                                  : Colors.purple.shade700,
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    factor.name,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: factor.isPositive
-                                          ? const Color(0xFF22C55E)
-                                          : const Color(0xFFEF4444),
-                                    ),
-                                  ),
-                                  Text(
-                                    factor.description,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Serving size info and calorie calculation
+                    const SizedBox(height: 12),
+                    _ServingSizeInfo(product: product),
+                    // Score explanation section
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Why this rating?',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Methodology explanation
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: scoreResult.nutriscoreGrade != null
+                            ? Colors.blue.shade50
+                            : Colors.purple.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            scoreResult.nutriscoreGrade != null
+                                ? Icons.verified
+                                : Icons.calculate,
+                            size: 16,
+                            color: scoreResult.nutriscoreGrade != null
+                                ? Colors.blue.shade700
+                                : Colors.purple.shade700,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              scoreResult.nutriscoreGrade != null
+                                  ? 'This rating uses the official Nutri-Score (${scoreResult.nutriscoreGrade!.toUpperCase()}) from the European food rating system. Nutri-Score grades products A (best) to E (worst) based on nutritional quality per 100g.'
+                                  : 'This rating is calculated by VitaSnap based on the nutritional profile per 100g. We analyze sugar, sodium, saturated fat, fiber, and protein content to estimate a health score.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: scoreResult.nutriscoreGrade != null
+                                    ? Colors.blue.shade700
+                                    : Colors.purple.shade700,
                               ),
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Score factors breakdown
+                    if (scoreResult.factors.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      ...scoreResult.factors.map(
+                        (factor) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                factor.isPositive
+                                    ? Icons.add_circle
+                                    : Icons.remove_circle,
+                                color: factor.isPositive
+                                    ? const Color(0xFF22C55E)
+                                    : const Color(0xFFEF4444),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      factor.name,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: factor.isPositive
+                                            ? const Color(0xFF22C55E)
+                                            : const Color(0xFFEF4444),
+                                      ),
+                                    ),
+                                    Text(
+                                      factor.description,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      )),
+                      ),
                     ],
                   ],
                 ),
@@ -502,6 +599,14 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 20),
+              ],
+              // Meal Items breakdown (for multi-item meals)
+              if (widget.scanResult.isMultiItemMeal) ...[
+                _MealItemsSection(
+                  mealItems: widget.scanResult.mealItems!,
+                  overallScore: widget.scanResult.score,
                 ),
                 const SizedBox(height: 20),
               ],
@@ -675,22 +780,30 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 flex: 1,
                 child: Consumer<FavoritesService>(
                   builder: (context, favoritesService, _) {
-                    final isFavorite = favoritesService.isFavorite(product.barcode);
+                    final isFavorite = favoritesService.isFavorite(
+                      product.barcode,
+                    );
                     return ElevatedButton(
                       onPressed: () {
                         favoritesService.toggleFavorite(widget.scanResult);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              isFavorite ? 'Removed from favorites' : 'Added to favorites',
+                              isFavorite
+                                  ? 'Removed from favorites'
+                                  : 'Added to favorites',
                             ),
                             duration: const Duration(seconds: 1),
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isFavorite ? Colors.red : Colors.grey.shade200,
-                        foregroundColor: isFavorite ? Colors.white : Colors.grey.shade700,
+                        backgroundColor: isFavorite
+                            ? Colors.red
+                            : Colors.grey.shade200,
+                        foregroundColor: isFavorite
+                            ? Colors.white
+                            : Colors.grey.shade700,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -732,6 +845,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 
   void _showMealTypePicker(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final now = DateTime.now();
+    final isToday = true; // When logging from scan, it's always for today
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -761,29 +877,99 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Current time: ${_formatTime(now)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   ...MealType.values.map((meal) {
+                    final isFuture = isToday && meal.isFutureForToday;
                     return ListTile(
-                      leading: Text(meal.emoji, style: const TextStyle(fontSize: 24)),
-                      title: Text(
-                        meal.displayName,
+                      leading: Text(
+                        meal.emoji,
                         style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.white : Colors.black87,
+                          fontSize: 24,
+                          color: isFuture ? Colors.grey.shade400 : null,
                         ),
                       ),
-                      onTap: () {
-                        Navigator.pop(ctx); // Close bottom sheet
-                        Navigator.pop(context, {
-                          'added': true,
-                          'mealType': meal,
-                        });
-                      },
+                      title: Row(
+                        children: [
+                          Text(
+                            meal.displayName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: isFuture
+                                  ? Colors.grey.shade400
+                                  : isDark
+                                      ? Colors.white
+                                      : Colors.black87,
+                            ),
+                          ),
+                          if (isFuture) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Future',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.orange.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      subtitle: isFuture
+                          ? Text(
+                              'Available after ${meal.typicalStartHour}:00',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
+                            )
+                          : null,
+                      onTap: isFuture
+                          ? () {
+                              // Show snackbar explaining why it's disabled
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    "Can't log ${meal.displayName} yet - it's still ${MealType.getCurrentMealType().displayName} time",
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          : () {
+                              Navigator.pop(ctx); // Close bottom sheet
+                              Navigator.pop(context, {
+                                'added': true,
+                                'mealType': meal,
+                              });
+                            },
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      tileColor: isDark ? Colors.white10 : Colors.grey.shade50,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      tileColor: isFuture
+                          ? (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
+                          : (isDark ? Colors.white10 : Colors.grey.shade50),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                     );
                   }),
                 ],
@@ -793,6 +979,14 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         );
       },
     );
+  }
+
+  String _formatTime(DateTime time) {
+    final hour = time.hour;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    return '$displayHour:$minute $period';
   }
 
   void _shareProduct(BuildContext context) {
@@ -1039,16 +1233,13 @@ class _DietaryInfoBanner extends StatelessWidget {
   final List<DietaryRestriction> matches;
   final List<DietaryRestriction> violations;
 
-  const _DietaryInfoBanner({
-    required this.matches,
-    required this.violations,
-  });
+  const _DietaryInfoBanner({required this.matches, required this.violations});
 
   @override
   Widget build(BuildContext context) {
     final hasViolations = violations.isNotEmpty;
     final hasMatches = matches.isNotEmpty;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -1068,12 +1259,18 @@ class _DietaryInfoBanner extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: hasViolations ? Colors.orange.shade100 : Colors.green.shade100,
+                  color: hasViolations
+                      ? Colors.orange.shade100
+                      : Colors.green.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                  hasViolations ? Icons.warning_amber_rounded : Icons.check_circle_outline,
-                  color: hasViolations ? Colors.orange.shade700 : Colors.green.shade700,
+                  hasViolations
+                      ? Icons.warning_amber_rounded
+                      : Icons.check_circle_outline,
+                  color: hasViolations
+                      ? Colors.orange.shade700
+                      : Colors.green.shade700,
                   size: 24,
                 ),
               ),
@@ -1082,7 +1279,9 @@ class _DietaryInfoBanner extends StatelessWidget {
                 'Dietary Check',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: hasViolations ? Colors.orange.shade800 : Colors.green.shade800,
+                  color: hasViolations
+                      ? Colors.orange.shade800
+                      : Colors.green.shade800,
                   fontSize: 15,
                 ),
               ),
@@ -1094,30 +1293,41 @@ class _DietaryInfoBanner extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: matches.map((v) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(v.icon, size: 16, color: Colors.green.shade700),
-                    const SizedBox(width: 6),
-                    Text(
-                      v.displayName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.green.shade700,
+              children: matches
+                  .map(
+                    (v) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(v.icon, size: 16, color: Colors.green.shade700),
+                          const SizedBox(width: 6),
+                          Text(
+                            v.displayName,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.check,
+                            size: 14,
+                            color: Colors.green.shade700,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.check, size: 14, color: Colors.green.shade700),
-                  ],
-                ),
-              )).toList(),
+                  )
+                  .toList(),
             ),
           ],
           // Violations (red)
@@ -1126,30 +1336,41 @@ class _DietaryInfoBanner extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: violations.map((v) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(v.icon, size: 16, color: Colors.red.shade700),
-                    const SizedBox(width: 6),
-                    Text(
-                      v.displayName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.red.shade700,
+              children: violations
+                  .map(
+                    (v) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(v.icon, size: 16, color: Colors.red.shade700),
+                          const SizedBox(width: 6),
+                          Text(
+                            v.displayName,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.red.shade700,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.close,
+                            size: 14,
+                            color: Colors.red.shade700,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.close, size: 14, color: Colors.red.shade700),
-                  ],
-                ),
-              )).toList(),
+                  )
+                  .toList(),
             ),
           ],
         ],
@@ -1167,7 +1388,7 @@ class _HealthWarningsBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasWarnings = result.hasWarnings;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -1221,7 +1442,7 @@ class _HealthWarningsBanner extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // Show safe message or warnings
           if (!hasWarnings) ...[
             const SizedBox(height: 12),
@@ -1253,13 +1474,15 @@ class _HealthWarningsBanner extends StatelessWidget {
             ),
           ] else ...[
             const SizedBox(height: 16),
-            
+
             // Warning cards
-            ...result.warnings.map((warning) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _WarningCard(warning: warning),
-            )),
-            
+            ...result.warnings.map(
+              (warning) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _WarningCard(warning: warning),
+              ),
+            ),
+
             // Tap to see more
             Center(
               child: TextButton.icon(
@@ -1324,9 +1547,14 @@ class _HealthWarningsBanner extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: result.overallSeverity.color.withValues(alpha: 0.15),
+                        color: result.overallSeverity.color.withValues(
+                          alpha: 0.15,
+                        ),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -1365,7 +1593,11 @@ class _HealthWarningsBanner extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.grey.shade600, size: 20),
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.grey.shade600,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     const Expanded(
                       child: Text(
@@ -1431,7 +1663,10 @@ class _WarningCard extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: warning.severity.color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
@@ -1451,10 +1686,7 @@ class _WarningCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     warning.nutrientValue!,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
                 ],
               ],
@@ -1565,5 +1797,535 @@ class _DetailedWarningCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Section to display individual meal items in a multi-item meal
+class _MealItemsSection extends StatelessWidget {
+  final List<MealItem> mealItems;
+  final int overallScore;
+
+  const _MealItemsSection({
+    required this.mealItems,
+    required this.overallScore,
+  });
+
+  String _getGrade(int score) {
+    if (score >= 85) return 'A';
+    if (score >= 70) return 'B';
+    if (score >= 55) return 'C';
+    if (score >= 40) return 'D';
+    return 'E';
+  }
+
+  Color _getGradeColor(String grade) {
+    switch (grade) {
+      case 'A':
+        return const Color(0xFF22C55E); // Green
+      case 'B':
+        return const Color(0xFF84CC16); // Lime
+      case 'C':
+        return const Color(0xFFEAB308); // Yellow
+      case 'D':
+        return const Color(0xFFF97316); // Orange
+      case 'E':
+        return const Color(0xFFEF4444); // Red
+      default:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.restaurant_menu,
+                size: 20,
+                color: Color(0xFF1B8A4E),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Meal Items',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              // Overall score badge
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: _getGradeColor(
+                    _getGrade(overallScore),
+                  ).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Overall: ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: _getGradeColor(_getGrade(overallScore)),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _getGrade(overallScore),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Individual meal items
+          ...mealItems.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            final grade = _getGrade(item.score);
+            final gradeColor = _getGradeColor(grade);
+            final isLast = index == mealItems.length - 1;
+
+            return Column(
+              children: [
+                _MealItemRow(item: item, grade: grade, gradeColor: gradeColor),
+                if (!isLast) ...[
+                  const SizedBox(height: 8),
+                  Divider(color: Colors.grey.shade200, height: 1),
+                  const SizedBox(height: 8),
+                ],
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+/// Individual meal item row widget with favorite button and tap to view details
+class _MealItemRow extends StatelessWidget {
+  final MealItem item;
+  final String grade;
+  final Color gradeColor;
+
+  const _MealItemRow({
+    required this.item,
+    required this.grade,
+    required this.gradeColor,
+  });
+
+  /// Creates a Product from MealItem for favorites/details
+  Product _toProduct() {
+    return Product(
+      barcode: 'meal_item_${item.name.hashCode}',
+      name: item.name,
+      brand: item.category,
+      nutriments: {
+        'energy-kcal_100g': item.nutrition['calories'] ?? 0,
+        'proteins_100g': item.nutrition['protein'] ?? 0,
+        'carbohydrates_100g': item.nutrition['carbs'] ?? 0,
+        'fat_100g': item.nutrition['fat'] ?? 0,
+        'sodium_100g': (item.nutrition['sodium'] ?? 0) / 1000,
+      },
+    );
+  }
+
+  /// Creates a ScanResult from MealItem for viewing details
+  ScanResult _toScanResult() {
+    return ScanResult(
+      product: _toProduct(),
+      score: item.score,
+    );
+  }
+
+  void _showMealItemDetails(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailsPage(
+          scanResult: _toScanResult(),
+          showAddToList: false, // Already part of a meal
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final favoritesService = context.watch<FavoritesService>();
+    final product = _toProduct();
+    final isFavorite = favoritesService.isFavorite(product.barcode);
+
+    // Extract key nutrition info
+    final calories =
+        item.nutrition['calories'] ?? item.nutrition['energy-kcal_100g'] ?? 0;
+    final protein =
+        item.nutrition['protein'] ?? item.nutrition['proteins_100g'] ?? 0;
+    final carbs =
+        item.nutrition['carbs'] ?? item.nutrition['carbohydrates_100g'] ?? 0;
+    final fat = item.nutrition['fat'] ?? item.nutrition['fat_100g'] ?? 0;
+
+    return InkWell(
+      onTap: () => _showMealItemDetails(context),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Grade badge
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: gradeColor,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                grade,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Item details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.name,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      // Favorite button
+                      GestureDetector(
+                        onTap: () {
+                          if (isFavorite) {
+                            favoritesService.removeFavorite(product.barcode);
+                          } else {
+                            favoritesService.addFavorite(
+                              ScanResult(product: product, score: item.score),
+                            );
+                          }
+                        },
+                        child: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          size: 20,
+                          color: isFavorite ? Colors.red : Colors.grey.shade400,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        '${item.quantity.toStringAsFixed(item.quantity.truncateToDouble() == item.quantity ? 0 : 1)} ${item.unit}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      if (item.category.isNotEmpty) ...[
+                        Text(
+                          ' • ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                        Text(
+                          item.category,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  // Nutrition mini-summary
+                  if (calories > 0 || protein > 0) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        if (calories > 0)
+                          _NutritionChip(
+                            label: '${calories.toStringAsFixed(0)} kcal',
+                            color: Colors.orange.shade100,
+                            textColor: Colors.orange.shade800,
+                          ),
+                        if (protein > 0)
+                          _NutritionChip(
+                            label: '${protein.toStringAsFixed(1)}g protein',
+                            color: Colors.blue.shade100,
+                            textColor: Colors.blue.shade800,
+                          ),
+                        if (carbs > 0)
+                          _NutritionChip(
+                            label: '${carbs.toStringAsFixed(1)}g carbs',
+                            color: Colors.green.shade100,
+                            textColor: Colors.green.shade800,
+                          ),
+                        if (fat > 0)
+                          _NutritionChip(
+                            label: '${fat.toStringAsFixed(1)}g fat',
+                            color: Colors.purple.shade100,
+                            textColor: Colors.purple.shade800,
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Small nutrition chip for meal item display
+class _NutritionChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final Color textColor;
+
+  const _NutritionChip({
+    required this.label,
+    required this.color,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget to display serving size info and calculated per-serving nutrition
+class _ServingSizeInfo extends StatelessWidget {
+  final Product product;
+
+  const _ServingSizeInfo({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    final servingSize = product.servingSize;
+    final servingGrams = product.servingQuantityGrams;
+    final caloriesPer100g = _getCaloriesPer100g();
+    
+    // Calculate per-serving calories if we have serving size
+    final perServingCalories = servingGrams != null && caloriesPer100g > 0
+        ? (caloriesPer100g * servingGrams / 100).round()
+        : null;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: Colors.amber.shade700,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Nutrition Info',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.amber.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Always show per 100g info
+          Row(
+            children: [
+              Icon(
+                Icons.scale,
+                size: 14,
+                color: Colors.grey.shade600,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Database values: per 100g',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              if (caloriesPer100g > 0) ...[
+                Text(
+                  ' (${caloriesPer100g.round()} kcal)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          // Show serving size if available
+          if (servingSize != null && servingSize.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(
+                  Icons.restaurant,
+                  size: 14,
+                  color: Colors.green.shade600,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Serving size: $servingSize',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (perServingCalories != null) ...[
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.calculate,
+                      size: 14,
+                      color: Colors.green.shade700,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Per serving: ~$perServingCalories kcal',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ] else ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(
+                  Icons.help_outline,
+                  size: 14,
+                  color: Colors.grey.shade500,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Serving size not available - check product label',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  double _getCaloriesPer100g() {
+    final nutriments = product.nutriments;
+    final value = nutriments['energy-kcal_100g'] ?? nutriments['energy-kcal'];
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
   }
 }

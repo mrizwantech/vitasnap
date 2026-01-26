@@ -59,12 +59,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
       description: 'Set your dietary restrictions and get alerts when products contain ingredients you avoid.',
       color: const Color(0xFFFF9800),
     ),
-    OnboardingItem(
-      icon: Icons.cloud_sync,
-      title: 'Cloud Backup',
-      description: 'Securely backup your scan history and preferences to access them across all your devices.',
-      color: const Color(0xFF9C27B0),
-    ),
   ];
 
   @override

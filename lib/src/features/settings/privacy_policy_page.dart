@@ -7,7 +7,7 @@ class PrivacyPolicyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -50,10 +50,12 @@ class PrivacyPolicyPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Last updated: December 2024',
+                          'Last updated: January 2026',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                            color: isDark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600,
                           ),
                         ),
                       ],
@@ -68,86 +70,94 @@ class PrivacyPolicyPage extends StatelessWidget {
               context,
               icon: Icons.info_outline,
               title: 'Introduction',
-              content: 'VitaSnap ("we", "our", or "us") is committed to protecting your privacy. '
-                  'This Privacy Policy explains how we collect, use, and safeguard your information '
-                  'when you use our mobile application.',
+              content:
+                  'VitaSnap ("we", "our", or "us") is committed to protecting your privacy. '
+                  'All your data stays on your device - we do not collect, store, or transmit '
+                  'any of your personal information to external servers.',
             ),
 
             _buildSection(
               context,
               icon: Icons.storage_outlined,
-              title: 'Information We Collect',
-              content: '''• Scanned product barcodes and nutritional information
-• Account information (email, name) if you create an account
-• Dietary preferences you set in the app
-• App usage data to improve our services
+              title: 'We Do Not Collect Your Data',
+              content:
+                  '''VitaSnap does NOT collect any personal information. Everything stays on your device:
 
-We do NOT collect:
-• Your location data
-• Contact information
-• Photos or media files
-• Financial information''',
+• Scanned products and nutritional info - stored locally
+• Your dietary preferences - stored locally
+• Scan history - stored locally
+• Health conditions - stored locally
+
+We have no servers storing your data. We do not track you. We do not have access to your information.''',
             ),
 
             _buildSection(
               context,
               icon: Icons.analytics_outlined,
-              title: 'How We Use Your Information',
-              content: '''• To provide product nutritional information
-• To save your scan history for easy access
-• To personalize dietary recommendations
-• To improve our app and services
-• To send important updates about the app''',
+              title: 'How The App Works',
+              content: '''All processing happens on your device:
+
+• Product lookups use public food databases
+• Your preferences personalize your experience locally
+• Scan history is saved only on your phone
+• No accounts required - no sign-up needed''',
             ),
 
             _buildSection(
               context,
-              icon: Icons.cloud_outlined,
-              title: 'Data Storage',
-              content: 'Your scan history and preferences are stored locally on your device. '
-                  'If you create an account, basic account information is stored securely on our servers '
-                  'using industry-standard encryption.',
+              icon: Icons.phone_android_outlined,
+              title: 'Local Storage Only',
+              content:
+                  'All your data is stored exclusively on your device. '
+                  'There is no cloud backup, no sync, and no remote storage. '
+                  'If you uninstall the app or clear app data, your information will be permanently deleted.',
             ),
 
             _buildSection(
               context,
-              icon: Icons.share_outlined,
-              title: 'Information Sharing',
-              content: 'We do not sell, trade, or rent your personal information to third parties. '
-                  'We may share anonymized, aggregated data for research or analytical purposes.',
+              icon: Icons.block_outlined,
+              title: 'No Data Sharing or Selling',
+              content:
+                  'We do not sell, trade, share, or rent any information - because we do not have access to it. '
+                  'Your data never leaves your device. There is nothing for us to share with anyone.',
             ),
 
             _buildSection(
               context,
               icon: Icons.security_outlined,
               title: 'Data Security',
-              content: 'We implement appropriate security measures to protect your personal information. '
-                  'However, no method of transmission over the internet is 100% secure.',
+              content:
+                  'Your data is as secure as your device. Since all information is stored locally, '
+                  'your data security depends on your device\'s security settings (screen lock, encryption, etc.).',
             ),
 
             _buildSection(
               context,
               icon: Icons.child_care_outlined,
               title: "Children's Privacy",
-              content: 'Our app is not intended for children under 13 years of age. '
+              content:
+                  'Our app is not intended for children under 13 years of age. '
                   'We do not knowingly collect personal information from children.',
             ),
 
             _buildSection(
               context,
               icon: Icons.settings_outlined,
-              title: 'Your Choices',
-              content: '''• You can clear your scan history at any time
-• You can update or delete your account
-• You can modify your dietary preferences
-• You can opt out of optional data collection''',
+              title: 'Your Control',
+              content: '''You have complete control over your data:
+
+• Clear your scan history anytime in Settings
+• Modify your dietary preferences anytime
+• Uninstall the app to delete all data permanently
+• No account to manage - it's that simple''',
             ),
 
             _buildSection(
               context,
               icon: Icons.update_outlined,
               title: 'Changes to This Policy',
-              content: 'We may update this Privacy Policy from time to time. '
+              content:
+                  'We may update this Privacy Policy from time to time. '
                   'We will notify you of any changes by posting the new policy in the app.',
             ),
 
@@ -155,7 +165,8 @@ We do NOT collect:
               context,
               icon: Icons.email_outlined,
               title: 'Contact Us',
-              content: 'If you have any questions about this Privacy Policy, please contact us at:\n\n'
+              content:
+                  'If you have any questions about this Privacy Policy, please contact us at:\n\n'
                   'support@vitasnap.app',
             ),
 
@@ -185,31 +196,29 @@ We do NOT collect:
     required String content,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: isDark ? null : [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: const Color(0xFF1B8A4E),
-                size: 20,
-              ),
+              Icon(icon, color: const Color(0xFF1B8A4E), size: 20),
               const SizedBox(width: 8),
               Text(
                 title,

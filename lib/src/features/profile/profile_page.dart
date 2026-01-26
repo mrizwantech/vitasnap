@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/theme_service.dart';
-import '../../core/services/cloud_sync_service.dart';
 import '../../core/services/health_conditions_service.dart';
 import '../../core/strings.dart';
 import '../../domain/repositories/scan_history_repository.dart';
 import '../settings/dietary_preferences_page.dart';
+import '../settings/notification_settings_page.dart';
 import '../settings/privacy_policy_page.dart';
 import '../../presentation/views/health_conditions_page.dart';
 import '../../presentation/widgets/vitasnap_logo.dart';
@@ -38,13 +38,15 @@ class ProfilePage extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: isDark ? null : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                boxShadow: isDark
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
               ),
               child: Column(
                 children: [
@@ -66,10 +68,7 @@ class ProfilePage extends StatelessWidget {
                   // Name
                   const Text(
                     'Guest User',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
 
@@ -89,36 +88,39 @@ class ProfilePage extends StatelessWidget {
             _SettingsCard(
               isDark: isDark,
               children: [
-                  _ThemeTile(
-                    themeService: themeService,
-                    primaryColor: primaryColor,
-                  ),
-                  _divider(),
-                  _SettingsTile(
-                    icon: Icons.food_bank_outlined,
-                    title: AppStrings.dietaryPreferences,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const DietaryPreferencesPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  _divider(),
-                  _HealthConditionsTile(primaryColor: primaryColor),
-                  _divider(),
-                  _SettingsTile(
-                    icon: Icons.notifications_outlined,
-                    title: AppStrings.notifications,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text(AppStrings.comingSoon)),
-                      );
-                    },
-                  ),
-                ],
+                _ThemeTile(
+                  themeService: themeService,
+                  primaryColor: primaryColor,
+                ),
+                _divider(),
+                _SettingsTile(
+                  icon: Icons.food_bank_outlined,
+                  title: AppStrings.dietaryPreferences,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DietaryPreferencesPage(),
+                      ),
+                    );
+                  },
+                ),
+                _divider(),
+                _HealthConditionsTile(primaryColor: primaryColor),
+                _divider(),
+                _SettingsTile(
+                  icon: Icons.notifications_outlined,
+                  title: AppStrings.notifications,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationSettingsPage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 24),
 
@@ -128,42 +130,21 @@ class ProfilePage extends StatelessWidget {
             _SettingsCard(
               isDark: isDark,
               children: [
-                  _CloudSyncTile(primaryColor: primaryColor),
-                  _divider(),
-                  _ClearHistoryTile(primaryColor: primaryColor),
-                  _divider(),
-                  _SettingsTile(
-                    icon: Icons.privacy_tip_outlined,
-                    title: AppStrings.privacyPolicy,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PrivacyPolicyPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-            ),
-            const SizedBox(height: 24),
-
-            // Support section
-            _SectionTitle(title: AppStrings.about, isDark: isDark),
-            const SizedBox(height: 12),
-            _SettingsCard(
-              isDark: isDark,
-              children: [
-                  _SettingsTile(
-                    icon: Icons.help_outline,
-                    title: AppStrings.helpAndSupport,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text(AppStrings.comingSoon)),
-                      );
-                    },
-                  ),
-                ],
+                _ClearHistoryTile(primaryColor: primaryColor),
+                _divider(),
+                _SettingsTile(
+                  icon: Icons.privacy_tip_outlined,
+                  title: AppStrings.privacyPolicy,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyPolicyPage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 24),
 
@@ -242,13 +223,15 @@ class _SettingsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: isDark ? null : [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(children: children),
     );
@@ -259,10 +242,7 @@ class _ThemeTile extends StatelessWidget {
   final ThemeService themeService;
   final Color primaryColor;
 
-  const _ThemeTile({
-    required this.themeService,
-    required this.primaryColor,
-  });
+  const _ThemeTile({required this.themeService, required this.primaryColor});
 
   @override
   Widget build(BuildContext context) {
@@ -280,10 +260,7 @@ class _ThemeTile extends StatelessWidget {
         ),
         child: Text(
           themeService.getThemeModeName(themeService.themeMode),
-          style: TextStyle(
-            color: Colors.grey.shade700,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
         ),
       ),
       onTap: () => _showThemeDialog(context),
@@ -423,11 +400,6 @@ class _ClearHistoryTile extends StatelessWidget {
 
     if (confirm == true && context.mounted) {
       await historyRepo.clearHistory();
-      // Also clear from Firebase if cloud sync is enabled
-      final cloudSync = context.read<CloudSyncService>();
-      if (cloudSync.isEnabled) {
-        await cloudSync.deleteCloudData();
-      }
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text(AppStrings.historyCleared)),
@@ -480,70 +452,9 @@ class _HealthConditionsTile extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => const HealthConditionsPage(),
-          ),
+          MaterialPageRoute(builder: (_) => const HealthConditionsPage()),
         );
       },
     );
-  }
-}
-
-class _CloudSyncTile extends StatelessWidget {
-  final Color primaryColor;
-  const _CloudSyncTile({required this.primaryColor});
-
-  @override
-  Widget build(BuildContext context) {
-    final cloudSync = context.watch<CloudSyncService>();
-    // Always show switch as enabled by default if local storage is cleared
-    final cloudEnabled = cloudSync.isEnabled == true;
-    
-    return ListTile(
-      leading: Icon(
-        cloudSync.isEnabled ? Icons.cloud_done : Icons.cloud_outlined,
-        color: cloudSync.isEnabled ? primaryColor : Colors.grey.shade700,
-      ),
-      title: const Text('Cloud Backup'),
-      subtitle: cloudSync.isEnabled
-          ? Text(
-              cloudSync.isSyncing 
-                  ? 'Syncing...' 
-                  : 'Last sync: ${cloudSync.lastSyncDisplay}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
-            )
-          : null,
-      trailing: Switch(
-        value: cloudEnabled,
-        activeThumbColor: primaryColor,
-        onChanged: (value) => _toggleCloudSync(context, value),
-      ),
-    );
-  }
-
-  Future<void> _toggleCloudSync(BuildContext context, bool enable) async {
-    final cloudSync = context.read<CloudSyncService>();
-    
-    if (enable) {
-      await cloudSync.setEnabled(true);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cloud backup enabled!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } else {
-      await cloudSync.setEnabled(false);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cloud backup disabled')),
-        );
-      }
-    }
   }
 }

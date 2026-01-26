@@ -15,6 +15,8 @@ class ProductModel {
 	final Map<String, dynamic>? nutriments;
 	final List<String> labels;
 	final String? nutriscoreGrade; // Nutri-Score grade: a, b, c, d, e
+	final String? servingSize;
+	final double? servingQuantityGrams;
 
 	ProductModel({
 		required this.barcode,
@@ -25,6 +27,8 @@ class ProductModel {
 		this.nutriments,
 		this.labels = const [],
 		this.nutriscoreGrade,
+		this.servingSize,
+		this.servingQuantityGrams,
 	});
 
 	factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -45,6 +49,14 @@ class ProductModel {
 		final nutriscoreGrade = product['nutriscore_grade']?.toString().toLowerCase();
 		developer.log('[ProductModel] nutriscore_grade: $nutriscoreGrade', name: 'ProductModel');
 		
+		// Extract serving size info
+		final servingSize = product['serving_size']?.toString();
+		final servingQuantityGrams = _parseServingQuantity(
+			product['serving_quantity'],
+			servingSize,
+		);
+		developer.log('[ProductModel] serving_size: $servingSize, quantity: $servingQuantityGrams g', name: 'ProductModel');
+		
 		return ProductModel(
 			barcode: product['code']?.toString() ?? '',
 			name: product['product_name'] ?? product['generic_name'] ?? 'Unknown',
@@ -54,7 +66,38 @@ class ProductModel {
 			nutriments: product['nutriments'] as Map<String, dynamic>?,
 			labels: labelsTags,
 			nutriscoreGrade: nutriscoreGrade,
+			servingSize: servingSize,
+			servingQuantityGrams: servingQuantityGrams,
 		);
+	}
+
+	/// Parse serving quantity in grams from API data
+	static double? _parseServingQuantity(dynamic quantity, String? servingSize) {
+		// Try direct quantity field first
+		if (quantity != null) {
+			if (quantity is num) return quantity.toDouble();
+			final parsed = double.tryParse(quantity.toString());
+			if (parsed != null) return parsed;
+		}
+		
+		// Try to extract grams from serving_size string like "150g" or "1 cup (150g)"
+		if (servingSize != null) {
+			// Match patterns like "150g", "150 g", "(150g)", "150gr"
+			final regex = RegExp(r'(\d+(?:\.\d+)?)\s*(?:g|gr|grams?)(?:\b|$)', caseSensitive: false);
+			final match = regex.firstMatch(servingSize);
+			if (match != null) {
+				return double.tryParse(match.group(1)!);
+			}
+			
+			// Match ml for liquids (approximate 1ml = 1g for water-based)
+			final mlRegex = RegExp(r'(\d+(?:\.\d+)?)\s*ml', caseSensitive: false);
+			final mlMatch = mlRegex.firstMatch(servingSize);
+			if (mlMatch != null) {
+				return double.tryParse(mlMatch.group(1)!);
+			}
+		}
+		
+		return null;
 	}
 
 	Product toEntity() {
@@ -67,6 +110,8 @@ class ProductModel {
 			nutriments: nutriments ?? {},
 			labels: labels,
 			nutriscoreGrade: nutriscoreGrade,
+			servingSize: servingSize,
+			servingQuantityGrams: servingQuantityGrams,
 		);
 	}
 }

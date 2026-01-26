@@ -24,40 +24,43 @@ class RecipeHealthScore extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratingColor = _getRatingColor(rating);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            ratingColor,
-            ratingColor.withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: ratingColor.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Score Circle
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                ratingColor,
+                ratingColor.withValues(alpha: 0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: ratingColor.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Score Circle
+              Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                   Text(
                     '$score',
                     style: const TextStyle(
@@ -153,7 +156,20 @@ class RecipeHealthScore extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),
+    // Disclaimer
+    const SizedBox(height: 8),
+    const Text(
+      'For informational purposes only. Not medical advice.',
+      style: TextStyle(
+        fontSize: 10,
+        color: Colors.grey,
+        fontStyle: FontStyle.italic,
+      ),
+      textAlign: TextAlign.center,
+    ),
+  ],
+);
   }
 
   Widget _buildNutritionBadge(String value, String label) {

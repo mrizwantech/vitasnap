@@ -141,7 +141,9 @@ class MealBuilderViewModel extends ChangeNotifier {
   /// Search for ingredients from OpenFoodFacts API
   /// This fetches real nutrition data from the database
   Future<void> searchIngredientsFromApi(String query) async {
+    debugPrint('[MealBuilderViewModel] searchIngredientsFromApi called with query: "$query"');
     if (query.trim().isEmpty) {
+      debugPrint('[MealBuilderViewModel] Query is empty, clearing results.');
       _searchResults = [];
       _isSearching = false;
       notifyListeners();
@@ -149,13 +151,23 @@ class MealBuilderViewModel extends ChangeNotifier {
     }
 
     _isSearching = true;
+    _error = null;
     notifyListeners();
 
     try {
-      _searchResults = await _searchIngredients.call(query);
+      final results = await _searchIngredients.call(query);
+      debugPrint('[MealBuilderViewModel] API returned \\${results.length} results for query: "$query"');
+      if (results.isNotEmpty) {
+        for (final r in results) {
+          debugPrint('[MealBuilderViewModel] Ingredient: id=\\${r.id}, name=\\${r.name}, category=\\${r.category}');
+        }
+      }
+      _searchResults = results;
       _isSearching = false;
       notifyListeners();
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[MealBuilderViewModel] Search failed: \\${e.toString()}');
+      debugPrint(stack.toString());
       _searchResults = [];
       _isSearching = false;
       _error = 'Search failed. Check your connection.';

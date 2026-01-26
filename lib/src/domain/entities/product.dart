@@ -12,6 +12,10 @@ class Product {
 	final List<String> labels;
 	/// Nutri-Score grade from OpenFoodFacts: a, b, c, d, e (or null if not available)
 	final String? nutriscoreGrade;
+	/// Serving size text (e.g., "1 cup (150g)", "30g")
+	final String? servingSize;
+	/// Serving quantity in grams (parsed from servingSize)
+	final double? servingQuantityGrams;
 
 	Product({
 		required this.barcode,
@@ -22,6 +26,8 @@ class Product {
 		this.nutriments = const {},
 		this.labels = const [],
 		this.nutriscoreGrade,
+		this.servingSize,
+		this.servingQuantityGrams,
 	});
 
 	/// Get numeric health score from Nutri-Score grade

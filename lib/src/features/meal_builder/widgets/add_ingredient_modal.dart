@@ -13,11 +13,7 @@ class AddIngredientModal extends StatefulWidget {
   final RecipeIngredient ingredient;
   final VoidCallback? onAdded;
 
-  const AddIngredientModal({
-    super.key,
-    required this.ingredient,
-    this.onAdded,
-  });
+  const AddIngredientModal({super.key, required this.ingredient, this.onAdded});
 
   @override
   State<AddIngredientModal> createState() => _AddIngredientModalState();
@@ -28,11 +24,35 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
   late IngredientUnit _selectedUnit;
   bool _addToTracker = false;
   MealType _selectedMealType = MealType.snack;
+  late TextEditingController _quantityController;
 
   @override
   void initState() {
     super.initState();
     _selectedUnit = widget.ingredient.unit;
+    _quantityController = TextEditingController(text: '1');
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  void _updateQuantityFromText(String text) {
+    final parsed = double.tryParse(text);
+    if (parsed != null && parsed > 0) {
+      setState(() => _quantity = parsed);
+    }
+  }
+
+  void _updateQuantity(double newQuantity) {
+    setState(() {
+      _quantity = newQuantity;
+      _quantityController.text = newQuantity == newQuantity.roundToDouble()
+          ? newQuantity.toInt().toString()
+          : newQuantity.toStringAsFixed(1);
+    });
   }
 
   int get _calculatedScore {
@@ -57,33 +77,65 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
     // Protein - high is good (> 5g per serving)
     final protein = nutrition['protein'] ?? 0;
     if (protein >= 10) {
-      good.add({'label': 'High in Protein', 'value': '${protein.round()}g', 'icon': '💪'});
+      good.add({
+        'label': 'High in Protein',
+        'value': '${protein.round()}g',
+        'icon': '💪',
+      });
     } else if (protein >= 5) {
-      good.add({'label': 'Good Protein', 'value': '${protein.round()}g', 'icon': '💪'});
+      good.add({
+        'label': 'Good Protein',
+        'value': '${protein.round()}g',
+        'icon': '💪',
+      });
     }
 
     // Fiber - high is good (> 3g per serving)
     final fiber = nutrition['fiber'] ?? 0;
     if (fiber >= 5) {
-      good.add({'label': 'High in Fiber', 'value': '${fiber.round()}g', 'icon': '🌾'});
+      good.add({
+        'label': 'High in Fiber',
+        'value': '${fiber.round()}g',
+        'icon': '🌾',
+      });
     } else if (fiber >= 3) {
-      good.add({'label': 'Good Fiber', 'value': '${fiber.round()}g', 'icon': '🌾'});
+      good.add({
+        'label': 'Good Fiber',
+        'value': '${fiber.round()}g',
+        'icon': '🌾',
+      });
     }
 
     // Low calories is good (< 100 per serving)
     final calories = nutrition['calories'] ?? 0;
     if (calories <= 50) {
-      good.add({'label': 'Low Calorie', 'value': '${calories.round()} cal', 'icon': '✨'});
+      good.add({
+        'label': 'Low Calorie',
+        'value': '${calories.round()} cal',
+        'icon': '✨',
+      });
     } else if (calories > 300) {
-      bad.add({'label': 'High Calorie', 'value': '${calories.round()} cal', 'icon': '🔥'});
+      bad.add({
+        'label': 'High Calorie',
+        'value': '${calories.round()} cal',
+        'icon': '🔥',
+      });
     }
 
     // Fat - high is concerning (> 15g per serving)
     final fat = nutrition['fat'] ?? 0;
     if (fat > 20) {
-      bad.add({'label': 'High in Fat', 'value': '${fat.round()}g', 'icon': '🍳'});
+      bad.add({
+        'label': 'High in Fat',
+        'value': '${fat.round()}g',
+        'icon': '🍳',
+      });
     } else if (fat > 10) {
-      bad.add({'label': 'Moderate Fat', 'value': '${fat.round()}g', 'icon': '🍳'});
+      bad.add({
+        'label': 'Moderate Fat',
+        'value': '${fat.round()}g',
+        'icon': '🍳',
+      });
     } else if (fat <= 3 && fat >= 0) {
       good.add({'label': 'Low Fat', 'value': '${fat.round()}g', 'icon': '💚'});
     }
@@ -91,45 +143,98 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
     // Sugar - high is bad (> 10g per serving)
     final sugar = nutrition['sugar'] ?? 0;
     if (sugar > 15) {
-      bad.add({'label': 'High in Sugar', 'value': '${sugar.round()}g', 'icon': '🍬'});
+      bad.add({
+        'label': 'High in Sugar',
+        'value': '${sugar.round()}g',
+        'icon': '🍬',
+      });
     } else if (sugar > 8) {
-      bad.add({'label': 'Moderate Sugar', 'value': '${sugar.round()}g', 'icon': '🍬'});
+      bad.add({
+        'label': 'Moderate Sugar',
+        'value': '${sugar.round()}g',
+        'icon': '🍬',
+      });
     } else if (sugar <= 2) {
-      good.add({'label': 'Low Sugar', 'value': '${sugar.round()}g', 'icon': '👍'});
+      good.add({
+        'label': 'Low Sugar',
+        'value': '${sugar.round()}g',
+        'icon': '👍',
+      });
     }
 
     // Sodium - high is bad (> 400mg per serving)
     final sodium = (nutrition['sodium'] ?? 0) * 1000; // Convert to mg
     if (sodium > 600) {
-      bad.add({'label': 'High Sodium', 'value': '${sodium.round()}mg', 'icon': '🧂'});
+      bad.add({
+        'label': 'High Sodium',
+        'value': '${sodium.round()}mg',
+        'icon': '🧂',
+      });
     } else if (sodium > 300) {
-      bad.add({'label': 'Moderate Sodium', 'value': '${sodium.round()}mg', 'icon': '🧂'});
+      bad.add({
+        'label': 'Moderate Sodium',
+        'value': '${sodium.round()}mg',
+        'icon': '🧂',
+      });
     } else if (sodium <= 100) {
-      good.add({'label': 'Low Sodium', 'value': '${sodium.round()}mg', 'icon': '💙'});
+      good.add({
+        'label': 'Low Sodium',
+        'value': '${sodium.round()}mg',
+        'icon': '💙',
+      });
     }
 
     // Carbs - context dependent, but very high is notable
     final carbs = nutrition['carbs'] ?? 0;
     if (carbs > 40) {
-      bad.add({'label': 'High in Carbs', 'value': '${carbs.round()}g', 'icon': '🍞'});
+      bad.add({
+        'label': 'High in Carbs',
+        'value': '${carbs.round()}g',
+        'icon': '🍞',
+      });
     } else if (carbs <= 5) {
-      good.add({'label': 'Low Carb', 'value': '${carbs.round()}g', 'icon': '🥗'});
+      good.add({
+        'label': 'Low Carb',
+        'value': '${carbs.round()}g',
+        'icon': '🥗',
+      });
     }
 
     // Check cholesterol from raw nutriments (not in adjusted)
-    final cholesterol = _getDouble(widget.ingredient.nutriments['cholesterol_100g']) * _getQuantityFactor() * 1000; // mg
+    final cholesterol =
+        _getDouble(widget.ingredient.nutriments['cholesterol_100g']) *
+        _getQuantityFactor() *
+        1000; // mg
     if (cholesterol > 150) {
-      bad.add({'label': 'High Cholesterol', 'value': '${cholesterol.round()}mg', 'icon': '⚠️'});
+      bad.add({
+        'label': 'High Cholesterol',
+        'value': '${cholesterol.round()}mg',
+        'icon': '⚠️',
+      });
     } else if (cholesterol > 60) {
-      bad.add({'label': 'Contains Cholesterol', 'value': '${cholesterol.round()}mg', 'icon': '🥚'});
+      bad.add({
+        'label': 'Contains Cholesterol',
+        'value': '${cholesterol.round()}mg',
+        'icon': '🥚',
+      });
     }
 
     // Saturated fat
-    final saturatedFat = _getDouble(widget.ingredient.nutriments['saturated-fat_100g']) * _getQuantityFactor();
+    final saturatedFat =
+        _getDouble(widget.ingredient.nutriments['saturated-fat_100g']) *
+        _getQuantityFactor();
     if (saturatedFat > 5) {
-      bad.add({'label': 'High Saturated Fat', 'value': '${saturatedFat.round()}g', 'icon': '🔴'});
+      bad.add({
+        'label': 'High Saturated Fat',
+        'value': '${saturatedFat.round()}g',
+        'icon': '🔴',
+      });
     } else if (saturatedFat > 2) {
-      bad.add({'label': 'Saturated Fat', 'value': '${saturatedFat.toStringAsFixed(1)}g', 'icon': '🟠'});
+      bad.add({
+        'label': 'Saturated Fat',
+        'value': '${saturatedFat.toStringAsFixed(1)}g',
+        'icon': '🟠',
+      });
     }
 
     return {'good': good, 'bad': bad};
@@ -161,13 +266,17 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
   }
 
   /// Get personalized health warnings based on user's health conditions
-  HealthAnalysisResult? _getHealthWarnings(HealthConditionsService healthService) {
+  HealthAnalysisResult? _getHealthWarnings(
+    HealthConditionsService healthService,
+  ) {
     if (!healthService.hasConditions) return null;
-    
+
     // Analyze the food's inherent nutritional quality (per 100g basis)
     // The thresholds in analyzeProduct are designed for per-100g values
     // so we pass the raw nutriments without scaling
-    return healthService.analyzeProduct(nutriments: widget.ingredient.nutriments);
+    return healthService.analyzeProduct(
+      nutriments: widget.ingredient.nutriments,
+    );
   }
 
   @override
@@ -208,8 +317,9 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: _getCategoryColor(widget.ingredient.category)
-                        .withValues(alpha: 0.15),
+                    color: _getCategoryColor(
+                      widget.ingredient.category,
+                    ).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -235,10 +345,7 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
                       const SizedBox(height: 2),
                       Text(
                         widget.ingredient.category,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: subtextColor,
-                        ),
+                        style: TextStyle(fontSize: 13, color: subtextColor),
                       ),
                     ],
                   ),
@@ -253,146 +360,175 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
-                // Combined Nutrition Section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'NUTRITION FOR ${_quantity == _quantity.roundToDouble() ? _quantity.toInt() : _quantity.toStringAsFixed(1)} ${_selectedUnit.displayName.toUpperCase()}${_quantity > 1 && _selectedUnit != IngredientUnit.gram ? 'S' : ''}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: subtextColor,
-                          letterSpacing: 0.5,
+                  // Combined Nutrition Section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'NUTRITION FOR ${_quantity == _quantity.roundToDouble() ? _quantity.toInt() : _quantity.toStringAsFixed(1)} ${_selectedUnit.displayName.toUpperCase()}${_quantity > 1 && _selectedUnit != IngredientUnit.gram ? 'S' : ''}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: subtextColor,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildNutritionItem(
-                            '${_calculatedNutrition['calories']?.round() ?? 0}',
-                            'Cal',
-                            textColor,
-                            subtextColor,
-                          ),
-                          _buildNutritionItem(
-                            '${_calculatedNutrition['protein']?.round() ?? 0}g',
-                            'Protein',
-                            textColor,
-                            subtextColor,
-                          ),
-                          _buildNutritionItem(
-                            '${_calculatedNutrition['carbs']?.round() ?? 0}g',
-                            'Carbs',
-                            textColor,
-                            subtextColor,
-                          ),
-                          _buildNutritionItem(
-                            '${_calculatedNutrition['fat']?.round() ?? 0}g',
-                            'Fat',
-                            textColor,
-                            subtextColor,
-                          ),
-                        ],
-                      ),
-                      // Inline highlights (good/bad) if any
-                      _buildInlineHighlights(isDark),
-                    ],
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildNutritionItem(
+                              '${_calculatedNutrition['calories']?.round() ?? 0}',
+                              'Cal',
+                              textColor,
+                              subtextColor,
+                            ),
+                            _buildNutritionItem(
+                              '${_calculatedNutrition['protein']?.round() ?? 0}g',
+                              'Protein',
+                              textColor,
+                              subtextColor,
+                            ),
+                            _buildNutritionItem(
+                              '${_calculatedNutrition['carbs']?.round() ?? 0}g',
+                              'Carbs',
+                              textColor,
+                              subtextColor,
+                            ),
+                            _buildNutritionItem(
+                              '${_calculatedNutrition['fat']?.round() ?? 0}g',
+                              'Fat',
+                              textColor,
+                              subtextColor,
+                            ),
+                          ],
+                        ),
+                        // Inline highlights (good/bad) if any
+                        _buildInlineHighlights(isDark),
+                      ],
+                    ),
                   ),
-                ),
 
-                // Personalized Health Warnings based on user's conditions
-                Builder(
-                  builder: (context) {
-                    final healthService = context.watch<HealthConditionsService>();
-                    final healthResult = _getHealthWarnings(healthService);
-                    
-                    // Show debug card for troubleshooting
-                    if (!healthService.hasConditions) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Set health conditions in Profile to see personalized warnings',
-                                  style: TextStyle(
-                                    color: isDark ? Colors.blue.shade200 : Colors.blue.shade700,
-                                    fontSize: 13,
+                  // Personalized Health Warnings based on user's conditions
+                  Builder(
+                    builder: (context) {
+                      final healthService = context
+                          .watch<HealthConditionsService>();
+                      final healthResult = _getHealthWarnings(healthService);
+
+                      // Show debug card for troubleshooting
+                      if (!healthService.hasConditions) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.blue.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.info_outline,
+                                  color: Colors.blue,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Set health conditions in Profile to see personalized warnings',
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.blue.shade200
+                                          : Colors.blue.shade700,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (healthResult == null || !healthResult.hasWarnings) {
+                        // Show "all clear" message when user has conditions but no warnings
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.green.withValues(alpha: 0.3),
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-                    
-                    if (healthResult == null || !healthResult.hasWarnings) {
-                      // Show "all clear" message when user has conditions but no warnings
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'No health concerns for your conditions',
-                                  style: TextStyle(
-                                    color: isDark ? Colors.green.shade200 : Colors.green.shade700,
-                                    fontSize: 13,
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_outline,
+                                  color: Colors.green,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'No health concerns for your conditions',
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.green.shade200
+                                          : Colors.green.shade700,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                        );
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: _buildHealthWarnings(
+                          healthResult,
+                          isDark,
+                          textColor,
+                          subtextColor,
                         ),
                       );
-                    }
-                    
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: _buildHealthWarnings(healthResult, isDark, textColor, subtextColor),
-                    );
-                  },
-                ),
+                    },
+                  ),
 
-                // Log to Tracker option
-                const SizedBox(height: 16),
-                _buildTrackerOption(isDark, textColor, subtextColor),
+                  // Log to Tracker option
+                  const SizedBox(height: 16),
+                  _buildTrackerOption(isDark, textColor, subtextColor),
 
-                const SizedBox(height: 16),
-              ],
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
-          ),
           ),
 
           // FIXED FOOTER: Unified action bar with quantity + unit + Add
           Container(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).viewInsets.bottom + 20),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
             decoration: BoxDecoration(
               color: backgroundColor,
               boxShadow: [
@@ -408,7 +544,9 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
                 // Quantity controls
                 Container(
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade100,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -417,27 +555,35 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
                       _buildQuantityButton(
                         icon: Icons.remove,
                         onPressed: _quantity > 0.5
-                            ? () => setState(() => _quantity -= 0.5)
+                            ? () => _updateQuantity(_quantity - 0.5)
                             : null,
                         isDark: isDark,
                       ),
                       SizedBox(
-                        width: 36,
-                        child: Text(
-                          _quantity == _quantity.roundToDouble()
-                              ? _quantity.toInt().toString()
-                              : _quantity.toStringAsFixed(1),
+                        width: 56,
+                        child: TextField(
+                          controller: _quantityController,
                           textAlign: TextAlign.center,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: textColor,
                           ),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 4),
+                            isDense: true,
+                          ),
+                          onChanged: _updateQuantityFromText,
+                          onSubmitted: (_) => FocusScope.of(context).unfocus(),
                         ),
                       ),
                       _buildQuantityButton(
                         icon: Icons.add,
-                        onPressed: () => setState(() => _quantity += 0.5),
+                        onPressed: () => _updateQuantity(_quantity + 0.5),
                         isDark: isDark,
                       ),
                     ],
@@ -448,7 +594,9 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade100,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -581,13 +729,7 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
             color: textColor,
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: subtextColor,
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 11, color: subtextColor)),
       ],
     );
   }
@@ -604,28 +746,29 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
     return Column(
       children: [
         const SizedBox(height: 12),
-        Divider(
-          color: isDark ? Colors.white12 : Colors.black12,
-          height: 1,
-        ),
+        Divider(color: isDark ? Colors.white12 : Colors.black12, height: 1),
         const SizedBox(height: 12),
         Wrap(
           spacing: 6,
           runSpacing: 6,
           alignment: WrapAlignment.center,
           children: [
-            ...good.map((item) => _buildMiniChip(
-              icon: item['icon'] as String,
-              label: item['label'] as String,
-              isGood: true,
-              isDark: isDark,
-            )),
-            ...bad.map((item) => _buildMiniChip(
-              icon: item['icon'] as String,
-              label: item['label'] as String,
-              isGood: false,
-              isDark: isDark,
-            )),
+            ...good.map(
+              (item) => _buildMiniChip(
+                icon: item['icon'] as String,
+                label: item['label'] as String,
+                isGood: true,
+                isDark: isDark,
+              ),
+            ),
+            ...bad.map(
+              (item) => _buildMiniChip(
+                icon: item['icon'] as String,
+                label: item['label'] as String,
+                isGood: false,
+                isDark: isDark,
+              ),
+            ),
           ],
         ),
       ],
@@ -639,8 +782,12 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
     required bool isDark,
   }) {
     final bgColor = isGood
-        ? (isDark ? const Color(0xFF1B5E20).withValues(alpha: 0.3) : const Color(0xFFE8F5E9))
-        : (isDark ? const Color(0xFFB71C1C).withValues(alpha: 0.3) : const Color(0xFFFFEBEE));
+        ? (isDark
+              ? const Color(0xFF1B5E20).withValues(alpha: 0.3)
+              : const Color(0xFFE8F5E9))
+        : (isDark
+              ? const Color(0xFFB71C1C).withValues(alpha: 0.3)
+              : const Color(0xFFFFEBEE));
     final textColor = isGood
         ? (isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32))
         : (isDark ? const Color(0xFFEF9A9A) : const Color(0xFFC62828));
@@ -678,7 +825,9 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: result.overallSeverity.color.withValues(alpha: isDark ? 0.15 : 0.1),
+        color: result.overallSeverity.color.withValues(
+          alpha: isDark ? 0.15 : 0.1,
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: result.overallSeverity.color.withValues(alpha: 0.3),
@@ -709,10 +858,14 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
           ),
           const SizedBox(height: 12),
           // Warning items
-          ...result.warnings.take(3).map((warning) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _buildWarningItem(warning, isDark),
-          )),
+          ...result.warnings
+              .take(3)
+              .map(
+                (warning) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _buildWarningItem(warning, isDark),
+                ),
+              ),
           // Show more indicator if there are more warnings
           if (result.warnings.length > 3)
             Padding(
@@ -756,7 +909,10 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: warning.severity.color.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
@@ -824,17 +980,9 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
         ];
       case 'veggies':
       case 'fruits':
-        return [
-          IngredientUnit.whole,
-          IngredientUnit.cup,
-          IngredientUnit.gram,
-        ];
+        return [IngredientUnit.whole, IngredientUnit.cup, IngredientUnit.gram];
       case 'grains':
-        return [
-          IngredientUnit.cup,
-          IngredientUnit.slice,
-          IngredientUnit.gram,
-        ];
+        return [IngredientUnit.cup, IngredientUnit.slice, IngredientUnit.gram];
       case 'dairy':
         return [
           IngredientUnit.cup,
@@ -873,10 +1021,12 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _addToTracker 
+          color: _addToTracker
               ? Theme.of(context).primaryColor.withValues(alpha: 0.5)
               : (isDark ? Colors.white12 : Colors.grey.shade200),
         ),
@@ -894,7 +1044,8 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
                   height: 24,
                   child: Checkbox(
                     value: _addToTracker,
-                    onChanged: (v) => setState(() => _addToTracker = v ?? false),
+                    onChanged: (v) =>
+                        setState(() => _addToTracker = v ?? false),
                     activeColor: Theme.of(context).primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
@@ -912,11 +1063,7 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
                     ),
                   ),
                 ),
-                Icon(
-                  Icons.history,
-                  size: 18,
-                  color: subtextColor,
-                ),
+                Icon(Icons.history, size: 18, color: subtextColor),
               ],
             ),
           ),
@@ -928,38 +1075,79 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
               child: Row(
                 children: MealType.values.map((meal) {
                   final isSelected = meal == _selectedMealType;
+                  final isFuture = meal.isFutureForToday;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: GestureDetector(
-                      onTap: () => setState(() => _selectedMealType = meal),
+                      onTap: isFuture
+                          ? () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    "Can't log ${meal.displayName} yet - it's still ${MealType.getCurrentMealType().displayName} time",
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          : () => setState(() => _selectedMealType = meal),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? Theme.of(context).primaryColor
-                              : (isDark ? Colors.white10 : Colors.white),
+                          color: isFuture
+                              ? (isDark ? Colors.grey.shade800 : Colors.grey.shade200)
+                              : isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : (isDark ? Colors.white10 : Colors.white),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isSelected
-                                ? Theme.of(context).primaryColor
-                                : (isDark ? Colors.white24 : Colors.grey.shade300),
+                            color: isFuture
+                                ? Colors.grey.shade400
+                                : isSelected
+                                    ? Theme.of(context).primaryColor
+                                    : (isDark
+                                          ? Colors.white24
+                                          : Colors.grey.shade300),
                           ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(meal.emoji, style: const TextStyle(fontSize: 14)),
+                            Text(
+                              meal.emoji,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isFuture ? Colors.grey : null,
+                              ),
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               meal.displayName,
                               style: TextStyle(
                                 fontSize: 13,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                color: isSelected
-                                    ? Colors.white
-                                    : (isDark ? Colors.white70 : Colors.black87),
+                                fontWeight: isSelected && !isFuture
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                                color: isFuture
+                                    ? Colors.grey
+                                    : isSelected
+                                        ? Colors.white
+                                        : (isDark
+                                              ? Colors.white70
+                                              : Colors.black87),
                               ),
                             ),
+                            if (isFuture) ...[
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.schedule,
+                                size: 12,
+                                color: Colors.grey.shade500,
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -974,33 +1162,56 @@ class _AddIngredientModalState extends State<AddIngredientModal> {
     );
   }
 
+  /// Convert NutriScoreGrade to 0-100 scale for tracker display
+  int _nutriScoreToTrackerScore(NutriScoreGrade grade) {
+    switch (grade) {
+      case NutriScoreGrade.a:
+        return 90; // A = 90 (shows as A on home page: 85+)
+      case NutriScoreGrade.b:
+        return 75; // B = 75 (shows as B on home page: 70-84)
+      case NutriScoreGrade.c:
+        return 60; // C = 60 (shows as C on home page: 55-69)
+      case NutriScoreGrade.d:
+        return 45; // D = 45 (shows as D on home page: 40-54)
+      case NutriScoreGrade.e:
+        return 20; // E = 20 (shows as E on home page: <40)
+    }
+  }
+
   void _addIngredient() async {
     final viewModel = context.read<MealBuilderViewModel>();
     viewModel.addIngredient(widget.ingredient, _quantity, _selectedUnit);
     viewModel.clearSearchResults();
-    
+
     // If user wants to log to tracker, create a ScanResult and add to history
     if (_addToTracker) {
       final addScanResult = context.read<AddScanResult>();
-      
-      // Create Product from ingredient
+
+      // Convert NutriScore grade to 0-100 scale for tracker
+      final trackerScore = _nutriScoreToTrackerScore(
+        widget.ingredient.nutriScore,
+      );
+
+      // Create Product from ingredient with nutriscoreGrade for proper display
       final product = Product(
         barcode: 'ingredient_${widget.ingredient.id}',
         name: widget.ingredient.name,
         brand: widget.ingredient.category,
         nutriments: _calculatedNutrition.map((k, v) => MapEntry(k, v)),
+        nutriscoreGrade:
+            widget.ingredient.nutriScore.name, // Pass the grade for display
       );
-      
-      // Create ScanResult with meal type
+
+      // Create ScanResult with meal type and proper score
       final scanResult = ScanResult(
         product: product,
-        score: widget.ingredient.scoreValue,
+        score: trackerScore,
         mealType: _selectedMealType,
       );
-      
+
       await addScanResult(scanResult);
     }
-    
+
     widget.onAdded?.call();
     Navigator.pop(context, {'added': true, 'loggedToTracker': _addToTracker});
   }

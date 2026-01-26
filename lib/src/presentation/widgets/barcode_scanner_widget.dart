@@ -16,8 +16,12 @@ import 'vitasnap_logo.dart';
 /// Behavior:
 /// - When a barcode is detected, the widget pops and forwards the code to
 ///   the `ScanViewModel` to trigger a lookup.
+/// - If [addToMealBuilder] is true, returns the product data instead of adding to history.
 class BarcodeScannerWidget extends StatefulWidget {
-  const BarcodeScannerWidget({super.key});
+  /// If true, returns product data to be added to meal builder instead of history
+  final bool addToMealBuilder;
+  
+  const BarcodeScannerWidget({super.key, this.addToMealBuilder = false});
 
   @override
   State<BarcodeScannerWidget> createState() => _BarcodeScannerWidgetState();
@@ -79,6 +83,17 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
                   return;
                 }
                 
+                // If adding to meal builder, return product data directly
+                if (widget.addToMealBuilder) {
+                  if (mounted) {
+                    navigator.pop({
+                      'product': scanResult.product,
+                      'score': scanResult.score,
+                    });
+                  }
+                  return;
+                }
+                
                 // Product found - navigate to details page
                 if (mounted) {
                   final result = await navigator.push<Map<String, dynamic>>(
@@ -91,11 +106,13 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
                   if (result != null && result['added'] == true) {
                     // Create new ScanResult with mealType if provided
                     final mealType = result['mealType'] as MealType?;
+                    developer.log('[Scanner] User selected meal type: ${mealType?.displayName ?? "null"}', name: 'vitasnap.scanner');
                     final scanWithMeal = ScanResult(
                       product: scanResult.product,
                       score: scanResult.score,
                       mealType: mealType,
                     );
+                    developer.log('[Scanner] Created ScanResult with mealType: ${scanWithMeal.mealType?.displayName ?? "null"}', name: 'vitasnap.scanner');
                     await vm.addToHistory(scanWithMeal);
                     // Pop scanner back to home with the result
                     if (mounted) {

@@ -2,15 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../widgets/product_tile.dart';
-import '../widgets/barcode_scanner_widget.dart';
 import '../widgets/vitasnap_logo.dart';
-import 'product_not_found_page.dart';
 import 'product_details_page.dart';
-import 'search_results_page.dart';
 import 'weekly_overview_page.dart';
 import '../../domain/usecases/get_recent_scans.dart';
 import '../../domain/usecases/compute_weekly_stats.dart';
-import '../../domain/usecases/search_products.dart';
 import '../../domain/repositories/user_repository.dart';
 import '../../domain/entities/scan_result.dart';
 import '../../features/profile/profile_page.dart';
@@ -28,8 +24,6 @@ class HomeDashboard extends StatefulWidget {
 class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserver {
   late Future<List<ScanResult>> _scansFuture;
   String _userName = AppStrings.defaultUserName;
-  bool _showSearch = false;
-  final _searchController = TextEditingController();
 
 
   @override
@@ -39,7 +33,6 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
     scanViewModel.onScanHistoryRestored = null;
     scanViewModel.removeListener(_onScanViewModelChanged);
     WidgetsBinding.instance.removeObserver(this);
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -142,99 +135,6 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
       if (!mounted) return;
       await context.read<UserRepository>().setUserName(newName);
       setState(() => _userName = newName);
-    }
-  }
-
-  /// Check if the input looks like a barcode (only digits, 8-14 characters)
-  bool _looksLikeBarcode(String input) {
-    final digitsOnly = RegExp(r'^\d+$');
-    return digitsOnly.hasMatch(input) &&
-        input.length >= 8 &&
-        input.length <= 14;
-  }
-
-  Future<void> _doSearch() async {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) return;
-
-    setState(() {
-      _showSearch = false;
-      _searchController.clear();
-    });
-
-    // If it looks like a barcode, do barcode lookup
-    if (_looksLikeBarcode(query)) {
-      final vm = context.read<ScanViewModel>();
-      final scanResult = await vm.fetchByBarcode(query);
-
-      if (scanResult == null) {
-        // Navigate to Product Not Found page
-        if (!mounted) return;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ProductNotFoundPage(barcode: query),
-          ),
-        );
-        return;
-      }
-
-      // Navigate to product details page
-      if (!mounted) return;
-      final result = await Navigator.of(context).push<Map<String, dynamic>>(
-        MaterialPageRoute(
-          builder: (_) => ProductDetailsPage(scanResult: scanResult),
-        ),
-      );
-
-      // If user added the product, save it and refresh list
-      if (result != null && result['added'] == true) {
-        await vm.addToHistory(scanResult);
-        _refreshScans();
-      }
-    } else {
-      // Text search - search by product name
-      if (!mounted) return;
-      final searchProducts = context.read<SearchProducts>();
-
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator()),
-      );
-
-      try {
-        final results = await searchProducts(query);
-        if (mounted) Navigator.of(context).pop(); // Close loading dialog
-
-        if (results.isEmpty) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(AppStrings.noProductsFoundFor(query))),
-            );
-          }
-          return;
-        }
-
-        // Navigate to search results page
-        final result = await Navigator.of(context).push<Map<String, dynamic>>(
-          MaterialPageRoute(
-            builder: (_) => SearchResultsPage(query: query, results: results),
-          ),
-        );
-
-        // If user added a product from search results, refresh list
-        if (result != null && result['added'] == true) {
-          _refreshScans();
-        }
-      } catch (e) {
-        if (mounted) Navigator.of(context).pop(); // Close loading dialog
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(AppStrings.searchError(e.toString()))));
-        }
-      }
     }
   }
 
@@ -559,99 +459,6 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
             }
           },
         ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: SafeArea(
-        child: _showSearch
-            ? Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color.fromRGBO(0, 0, 0, 0.1),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          autofocus: true,
-                          decoration: const InputDecoration(
-                            hintText: AppStrings.searchByNameOrBarcode,
-                            prefixIcon: Icon(Icons.search),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                          ),
-                          textInputAction: TextInputAction.search,
-                          onSubmitted: (_) => _doSearch(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    FloatingActionButton(
-                      heroTag: 'search_go_fab',
-                      onPressed: _doSearch,
-                      backgroundColor: const Color(0xFF00C17B),
-                      child: const Icon(Icons.arrow_forward, size: 24),
-                    ),
-                    const SizedBox(width: 8),
-                    FloatingActionButton(
-                      heroTag: 'search_close_fab',
-                      mini: true,
-                      onPressed: () => setState(() {
-                        _showSearch = false;
-                        _searchController.clear();
-                      }),
-                      backgroundColor: Colors.grey.shade400,
-                      child: const Icon(Icons.close, size: 20),
-                    ),
-                  ],
-                ),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FloatingActionButton(
-                    heroTag: 'search_fab',
-                    onPressed: () => setState(() => _showSearch = true),
-                    backgroundColor: const Color(0xFF00C17B),
-                    elevation: 4,
-                    child: const Icon(
-                      Icons.search,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  FloatingActionButton.extended(
-                    heroTag: 'scan_fab',
-                    onPressed: () async {
-                      final res = await Navigator.of(context)
-                          .push<Map<String, dynamic>>(
-                            MaterialPageRoute(
-                              builder: (_) => const BarcodeScannerWidget(),
-                            ),
-                          );
-                      if (res != null && res['added'] == true) {
-                        _refreshScans();
-                      }
-                    },
-                    backgroundColor: const Color(0xFF00C17B),
-                    icon: const Icon(Icons.qr_code_scanner, size: 24),
-                    label: const Text(AppStrings.scanIt),
-                  ),
-                ],
-              ),
       ),
     );
   }

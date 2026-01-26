@@ -1,4 +1,6 @@
+
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 
 import '../../core/network/network_service.dart';
 
@@ -19,7 +21,7 @@ class UsdaFoodApi {
   /// 
   /// [query] - Search term (e.g., "egg", "milk", "chicken breast")
   /// [pageSize] - Number of results to return (default 15)
-  /// [dataType] - Filter by data type: 'Foundation', 'SR Legacy', 'Survey (FNDDS)', 'Branded'
+  /// [dataType] - Filter by data type: 'Foundation', 'SR Legacy', 'Branded'
   Future<List<Map<String, dynamic>>> searchFoods(
     String query, {
     int pageSize = 15,
@@ -27,24 +29,37 @@ class UsdaFoodApi {
   }) async {
     // Prefer Foundation and SR Legacy for generic ingredients
     // These contain raw/unbranded foods like "egg", "milk", etc.
-    final dataTypeParam = dataTypes?.join(',') ?? 'Foundation,SR Legacy,Survey (FNDDS)';
+    // Note: Avoid 'Survey (FNDDS)' as parentheses cause API issues
+    final effectiveDataTypes = dataTypes ?? ['Foundation', 'SR Legacy'];
     
-    final uri = Uri.parse(
-      '$_baseUrl/foods/search?query=${Uri.encodeComponent(query)}'
-      '&api_key=$_apiKey'
-      '&pageSize=$pageSize'
-      '&dataType=${Uri.encodeComponent(dataTypeParam)}'
+    // Build URI with query parameters properly encoded
+    // The USDA API requires multiple dataType parameters for filtering
+    final uri = Uri.https(
+      'api.nal.usda.gov',
+      '/fdc/v1/foods/search',
+      {
+        'query': query,
+        'api_key': _apiKey,
+        'pageSize': pageSize.toString(),
+        // For multiple values, join with comma - the API accepts this format
+        'dataType': effectiveDataTypes.join(','),
+      },
     );
 
     developer.log('[UsdaFoodApi] searching $uri', name: 'UsdaFoodApi');
+    debugPrint('[UsdaFoodApi] searching $uri');
 
     try {
       final json = await _network.getJson(uri);
+      debugPrint('[UsdaFoodApi] API raw response: $json');
       final foods = json['foods'] as List<dynamic>? ?? [];
       developer.log('[UsdaFoodApi] search returned ${foods.length} results', name: 'UsdaFoodApi');
+      debugPrint('[UsdaFoodApi] search returned ${foods.length} results');
       return foods.cast<Map<String, dynamic>>();
-    } catch (e) {
+    } catch (e, stack) {
       developer.log('[UsdaFoodApi] search error: $e', name: 'UsdaFoodApi');
+      debugPrint('[UsdaFoodApi] search error: $e');
+      debugPrint(stack.toString());
       return [];
     }
   }
@@ -119,24 +134,27 @@ class UsdaFoodApi {
     int negativePoints = 0;
     
     // Energy points (0-10)
-    if (kcal > 335) negativePoints += 10;
-    else if (kcal > 270) negativePoints += 8;
+    if (kcal > 335) {
+      negativePoints += 10;
+    } else if (kcal > 270) negativePoints += 8;
     else if (kcal > 200) negativePoints += 6;
     else if (kcal > 135) negativePoints += 4;
     else if (kcal > 70) negativePoints += 2;
     else if (kcal > 0) negativePoints += 1;
     
     // Sugars points (0-10)
-    if (sugars > 45) negativePoints += 10;
-    else if (sugars > 36) negativePoints += 8;
+    if (sugars > 45) {
+      negativePoints += 10;
+    } else if (sugars > 36) negativePoints += 8;
     else if (sugars > 27) negativePoints += 6;
     else if (sugars > 18) negativePoints += 4;
     else if (sugars > 9) negativePoints += 2;
     else if (sugars > 4.5) negativePoints += 1;
     
     // Saturated fat points (0-10)
-    if (satFat > 10) negativePoints += 10;
-    else if (satFat > 8) negativePoints += 8;
+    if (satFat > 10) {
+      negativePoints += 10;
+    } else if (satFat > 8) negativePoints += 8;
     else if (satFat > 6) negativePoints += 6;
     else if (satFat > 4) negativePoints += 4;
     else if (satFat > 2) negativePoints += 2;
@@ -144,8 +162,9 @@ class UsdaFoodApi {
     
     // Sodium points (0-10) - sodium in g
     final sodiumMg = sodium * 1000;
-    if (sodiumMg > 900) negativePoints += 10;
-    else if (sodiumMg > 720) negativePoints += 8;
+    if (sodiumMg > 900) {
+      negativePoints += 10;
+    } else if (sodiumMg > 720) negativePoints += 8;
     else if (sodiumMg > 540) negativePoints += 6;
     else if (sodiumMg > 360) negativePoints += 4;
     else if (sodiumMg > 180) negativePoints += 2;
@@ -155,15 +174,17 @@ class UsdaFoodApi {
     int positivePoints = 0;
     
     // Fiber points (0-5)
-    if (fiber > 4.7) positivePoints += 5;
-    else if (fiber > 3.5) positivePoints += 4;
+    if (fiber > 4.7) {
+      positivePoints += 5;
+    } else if (fiber > 3.5) positivePoints += 4;
     else if (fiber > 2.4) positivePoints += 3;
     else if (fiber > 1.2) positivePoints += 2;
     else if (fiber > 0.6) positivePoints += 1;
     
     // Protein points (0-5)
-    if (protein > 8) positivePoints += 5;
-    else if (protein > 6.4) positivePoints += 4;
+    if (protein > 8) {
+      positivePoints += 5;
+    } else if (protein > 6.4) positivePoints += 4;
     else if (protein > 4.8) positivePoints += 3;
     else if (protein > 3.2) positivePoints += 2;
     else if (protein > 1.6) positivePoints += 1;
