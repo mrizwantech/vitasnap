@@ -16,6 +16,12 @@ class Product {
 	final String? servingSize;
 	/// Serving quantity in grams (parsed from servingSize)
 	final double? servingQuantityGrams;
+	/// NOVA group classification (1-4) from OpenFoodFacts
+	/// 1: Unprocessed or minimally processed foods
+	/// 2: Processed culinary ingredients
+	/// 3: Processed foods
+	/// 4: Ultra-processed food and drink products
+	final int? novaGroup;
 
 	Product({
 		required this.barcode,
@@ -28,6 +34,7 @@ class Product {
 		this.nutriscoreGrade,
 		this.servingSize,
 		this.servingQuantityGrams,
+		this.novaGroup,
 	});
 
 	/// Get numeric health score from Nutri-Score grade

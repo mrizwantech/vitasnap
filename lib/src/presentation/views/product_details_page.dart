@@ -528,6 +528,40 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         ),
                       ),
                     ],
+                    // Data confidence indicator (for computed scores)
+                    if (scoreResult.dataConfidence != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _getConfidenceColor(scoreResult.dataConfidence!.confidence).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: _getConfidenceColor(scoreResult.dataConfidence!.confidence).withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _getConfidenceIcon(scoreResult.dataConfidence!.label),
+                              size: 16,
+                              color: _getConfidenceColor(scoreResult.dataConfidence!.confidence),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Data Confidence: ${scoreResult.dataConfidence!.confidence}% (${scoreResult.dataConfidence!.label})',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _getConfidenceColor(scoreResult.dataConfidence!.confidence),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1055,6 +1089,25 @@ Scan your food with VitaSnap to make healthier choices!
         return 'Avoid if Possible';
       default:
         return 'Unknown';
+    }
+  }
+
+  Color _getConfidenceColor(int confidence) {
+    if (confidence >= 80) return const Color(0xFF22C55E); // Green - high
+    if (confidence >= 50) return const Color(0xFFF59E0B); // Amber - medium
+    return const Color(0xFFEF4444); // Red - low
+  }
+
+  IconData _getConfidenceIcon(String label) {
+    switch (label) {
+      case 'high':
+        return Icons.verified;
+      case 'medium':
+        return Icons.info_outline;
+      case 'low':
+        return Icons.warning_amber;
+      default:
+        return Icons.help_outline;
     }
   }
 }

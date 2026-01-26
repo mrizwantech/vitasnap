@@ -23,6 +23,7 @@ class HomeDashboard extends StatefulWidget {
 
 class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserver {
   late Future<List<ScanResult>> _scansFuture;
+  late Future<List<ScanResult>> _weeklyStatsFuture; // All scans for weekly stats
   String _userName = AppStrings.defaultUserName;
 
 
@@ -39,6 +40,8 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
   void _refreshScans() {
     setState(() {
       _scansFuture = context.read<GetRecentScans>().call(limit: 10);
+      // Fetch all scans (up to 50) for weekly stats to ensure accurate calculation
+      _weeklyStatsFuture = context.read<GetRecentScans>().call(limit: 50);
     });
   }
 
@@ -49,6 +52,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
     WidgetsBinding.instance.addObserver(this);
     // Initialize with empty future, then load after first frame
     _scansFuture = Future.value([]);
+    _weeklyStatsFuture = Future.value([]);
 
     // Listen for scan history restored event
     final scanViewModel = context.read<ScanViewModel>();
@@ -227,7 +231,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
                           ),
                           const SizedBox(height: 28),
                           FutureBuilder<List<ScanResult>>(
-                            future: _scansFuture,
+                            future: _weeklyStatsFuture, // Use all scans for accurate weekly stats
                             builder: (context, snap) {
                               final scans = snap.data ?? [];
                               final stats = ComputeWeeklyStats()(scans);
@@ -388,7 +392,7 @@ class _HomeDashboardState extends State<HomeDashboard> with WidgetsBindingObserv
                     ),
                     const SizedBox(height: 18),
                     FutureBuilder<List<ScanResult>>(
-                      future: _scansFuture,
+                      future: _weeklyStatsFuture, // Use all scans for accurate weekly stats
                       builder: (context, snap) {
                         final scans = snap.data ?? [];
                         final stats = ComputeWeeklyStats()(scans);

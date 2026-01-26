@@ -12,6 +12,7 @@ import '../../domain/entities/product.dart';
 import '../../domain/entities/recipe.dart';
 import '../../domain/entities/scan_result.dart';
 import '../../domain/repositories/scan_history_repository.dart';
+import '../../domain/usecases/compute_health_score.dart';
 import '../../domain/usecases/search_products.dart';
 import '../../presentation/viewmodels/meal_builder_viewmodel.dart';
 import '../../presentation/viewmodels/scan_viewmodel.dart';
@@ -594,53 +595,12 @@ class _MealBuilderPageState extends State<MealBuilderPage> {
     return Colors.red;
   }
 
-  /// Estimate a health score for a product based on nutriments
+  /// Estimate a health score for a product using centralized scoring
+  /// Uses ComputeHealthScore for consistent Nutri-Score-like algorithm
   int _estimateProductScore(Product product) {
-    final nutriments = product.nutriments ?? {};
-    int score = 50; // Start with neutral score
-
-    // Penalize high sugar
-    final sugar = (nutriments['sugars_100g'] ?? nutriments['sugars'] ?? 0)
-        .toDouble();
-    if (sugar > 20) {
-      score -= 20;
-    } else if (sugar > 10)
-      score -= 10;
-    else if (sugar < 5)
-      score += 10;
-
-    // Penalize high fat
-    final fat = (nutriments['fat_100g'] ?? nutriments['fat'] ?? 0).toDouble();
-    if (fat > 20) {
-      score -= 15;
-    } else if (fat > 10)
-      score -= 5;
-
-    // Penalize high sodium
-    final sodium = (nutriments['sodium_100g'] ?? nutriments['sodium'] ?? 0)
-        .toDouble();
-    if (sodium > 1) {
-      score -= 15;
-    } else if (sodium > 0.5)
-      score -= 5;
-
-    // Reward high protein
-    final protein = (nutriments['proteins_100g'] ?? nutriments['proteins'] ?? 0)
-        .toDouble();
-    if (protein > 20) {
-      score += 20;
-    } else if (protein > 10)
-      score += 10;
-
-    // Reward high fiber
-    final fiber = (nutriments['fiber_100g'] ?? nutriments['fiber'] ?? 0)
-        .toDouble();
-    if (fiber > 5) {
-      score += 15;
-    } else if (fiber > 2)
-      score += 5;
-
-    return score.clamp(0, 100);
+    // Use the centralized health score computation
+    final computeHealthScore = context.read<ComputeHealthScore>();
+    return computeHealthScore.call(product);
   }
 
   /// Open barcode scanner - adds directly to meal builder
@@ -957,9 +917,11 @@ class _MealBuilderPageState extends State<MealBuilderPage> {
       final dialogResult = await _showMealTimeConfirmation(mealType);
       if (dialogResult == null) return; // User cancelled
 
-      // Update meal type if user chose to change
-      if (dialogResult['action'] == 'change') {
-        mealType = dialogResult['mealType'] as MealType;
+      // Update meal type from dialog result (user may have changed it for past dates
+      // or chosen to switch to suggested meal)
+      final dialogMealType = dialogResult['mealType'] as MealType?;
+      if (dialogMealType != null) {
+        mealType = dialogMealType;
         context.read<MealBuilderViewModel>().setMealType(mealType);
       }
 

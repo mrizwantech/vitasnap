@@ -17,6 +17,7 @@ class ProductModel {
 	final String? nutriscoreGrade; // Nutri-Score grade: a, b, c, d, e
 	final String? servingSize;
 	final double? servingQuantityGrams;
+	final int? novaGroup; // NOVA classification: 1-4
 
 	ProductModel({
 		required this.barcode,
@@ -29,6 +30,7 @@ class ProductModel {
 		this.nutriscoreGrade,
 		this.servingSize,
 		this.servingQuantityGrams,
+		this.novaGroup,
 	});
 
 	factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -49,6 +51,10 @@ class ProductModel {
 		final nutriscoreGrade = product['nutriscore_grade']?.toString().toLowerCase();
 		developer.log('[ProductModel] nutriscore_grade: $nutriscoreGrade', name: 'ProductModel');
 		
+		// Extract NOVA group (1-4) for ultra-processing classification
+		final novaGroup = _parseNovaGroup(product['nova_group']);
+		developer.log('[ProductModel] nova_group: $novaGroup', name: 'ProductModel');
+		
 		// Extract serving size info
 		final servingSize = product['serving_size']?.toString();
 		final servingQuantityGrams = _parseServingQuantity(
@@ -68,7 +74,17 @@ class ProductModel {
 			nutriscoreGrade: nutriscoreGrade,
 			servingSize: servingSize,
 			servingQuantityGrams: servingQuantityGrams,
+			novaGroup: novaGroup,
 		);
+	}
+
+	/// Parse NOVA group from API data (1-4)
+	static int? _parseNovaGroup(dynamic value) {
+		if (value == null) return null;
+		if (value is int) return value.clamp(1, 4);
+		final parsed = int.tryParse(value.toString());
+		if (parsed != null && parsed >= 1 && parsed <= 4) return parsed;
+		return null;
 	}
 
 	/// Parse serving quantity in grams from API data
@@ -112,6 +128,7 @@ class ProductModel {
 			nutriscoreGrade: nutriscoreGrade,
 			servingSize: servingSize,
 			servingQuantityGrams: servingQuantityGrams,
+			novaGroup: novaGroup,
 		);
 	}
 }
