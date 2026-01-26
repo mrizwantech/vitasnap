@@ -43,20 +43,17 @@ import 'src/presentation/viewmodels/meal_builder_viewmodel.dart';
 import 'src/presentation/views/main_navigation.dart';
 import 'src/features/onboarding/onboarding_page.dart';
 
-/// Global navigator key for handling notification navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+/// The main entry point for the VitaSnap app.
 void main() async {
-  // Use runZonedGuarded to catch all errors
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Initialize Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Activate Firebase App Check
     await FirebaseAppCheck.instance.activate(
       androidProvider: kDebugMode 
           ? AndroidProvider.debug 
@@ -66,7 +63,6 @@ void main() async {
           : AppleProvider.appAttest,
     );
     
-    // In debug mode, print App Check token for registration in Firebase Console
     if (kDebugMode) {
       FirebaseAppCheck.instance.onTokenChange.listen((token) {
         debugPrint('=== APP CHECK DEBUG TOKEN ===');
@@ -77,30 +73,27 @@ void main() async {
       });
     }
 
-    // Initialize Crashlytics (only in release mode)
     if (!kDebugMode) {
-      // Pass all uncaught "fatal" errors from the framework to Crashlytics
       FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     }
 
-    // Initialize AdMob SDK
     await AdService.initialize();
 
     final prefs = await SharedPreferences.getInstance();
     runApp(MyApp(prefs: prefs));
   }, (error, stack) {
-    // Pass all uncaught asynchronous errors to Crashlytics
     if (!kDebugMode) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     }
   });
 }
 
+/// The root widget for the VitaSnap application.
 class MyApp extends StatelessWidget {
   final SharedPreferences prefs;
   const MyApp({super.key, required this.prefs});
 
-  // This widget is the root of your application.
+  /// Builds the widget tree and sets up providers and theming.
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -129,11 +122,9 @@ class MyApp extends StatelessWidget {
         Provider(
           create: (ctx) => SearchProducts(ctx.read<ProductRepositoryImpl>()),
         ),
-        // USDA Food API for generic ingredients
         Provider(
           create: (ctx) => UsdaFoodApi(ctx.read<NetworkService>()),
         ),
-        // Recipe Builder providers
         Provider<RecipeRepository>(
           create: (ctx) => RecipeRepositoryImpl(
             ctx.read<SharedPreferences>(),
@@ -204,46 +195,47 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Top-level wrapper - direct access without login
+/// Top-level wrapper for the app, used to inject the guest user ID and launch the main flow.
 class AppWrapper extends StatelessWidget {
   const AppWrapper({super.key});
 
-  // Constant guest user ID for local storage keys
   static const String guestUserId = 'guest_user';
 
+  /// Builds the widget tree for the guest user flow.
   @override
   Widget build(BuildContext context) {
-    // Direct access - bypass login, use guest user ID for onboarding tracking
     return const AuthenticatedWrapper(userId: guestUserId);
   }
 }
 
-/// Wrapper for authenticated users - handles onboarding then home
+/// Main wrapper for user-specific app state, onboarding, and navigation.
 class AuthenticatedWrapper extends StatefulWidget {
   final String userId;
   
   const AuthenticatedWrapper({super.key, required this.userId});
 
+  /// Creates the state for AuthenticatedWrapper.
   @override
   State<AuthenticatedWrapper> createState() => _AuthenticatedWrapperState();
 }
 
+/// State for AuthenticatedWrapper, manages onboarding and user-specific services.
 class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
   bool? _onboardingComplete;
   String? _lastUserId;
 
+  /// Initializes onboarding check on widget creation.
   @override
   void initState() {
     super.initState();
     _checkOnboarding();
   }
 
+  /// Handles widget updates and re-checks onboarding if user changes.
   @override
   void didUpdateWidget(AuthenticatedWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Re-check onboarding if user changed
     if (oldWidget.userId != widget.userId) {
-      // Reset to loading state to allow old widgets to dispose properly
       setState(() {
         _onboardingComplete = null;
       });
@@ -251,81 +243,63 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
     }
   }
 
+  /// Checks if onboarding is complete for the current user.
   Future<void> _checkOnboarding() async {
     debugPrint('Checking onboarding for user: ${widget.userId}');
     final complete = await OnboardingPage.isCompleteForUser(widget.userId);
     debugPrint('Onboarding complete: $complete');
-    // Guard: ensure widget is still mounted before calling setState
     if (!mounted) return;
     setState(() {
       _onboardingComplete = complete;
     });
   }
 
+  /// Updates user-specific services and restores data if needed.
   void _updateUserServices(String? userId) {
-    // Guard: ensure widget is still mounted
     if (!mounted) return;
     
-    // Set user ID on scan history repository
     final scanHistoryRepo = context.read<ScanHistoryRepository>();
     if (scanHistoryRepo is ScanHistoryRepositoryImpl) {
       scanHistoryRepo.setUserId(userId);
     }
-    // Set user ID on dietary preferences service
     final dietaryPrefsService = context.read<DietaryPreferencesService>();
     dietaryPrefsService.setUserId(userId);
-    // Set user ID on health conditions service
     final healthConditionsService = context.read<HealthConditionsService>();
     healthConditionsService.setUserId(userId);
-    // Set user ID on cloud sync service
     final cloudSyncService = context.read<CloudSyncService>();
     cloudSyncService.setUserId(userId);
-    // Initialize meal reminder service
     final mealReminderService = context.read<MealReminderService>();
     mealReminderService.initialize();
     
-    // Set up notification tap handler to navigate to home
     MealReminderService.onNotificationTapped = () {
-      // Navigate to home page when notification is tapped
       final navContext = navigatorKey.currentContext;
       if (navContext != null) {
-        // Pop to root and navigate to home tab
         navigatorKey.currentState?.popUntil((route) => route.isFirst);
         MainNavigation.navigateToHome(navContext);
       }
     };
     
-    // Wire up cloud sync to scan viewmodel for auto-sync
     final scanViewModel = context.read<ScanViewModel>();
     scanViewModel.setCloudSyncService(cloudSyncService);
-    // Wire up cloud sync to dietary preferences for auto-sync
     dietaryPrefsService.setCloudSyncService(cloudSyncService);
 
-    // Restore data from Firestore if cloud sync is enabled
-    // Note: We capture all references above BEFORE the async block
     () async {
       if (cloudSyncService.isEnabled) {
         final cloudData = await cloudSyncService.fetchFromCloud();
         debugPrint('Firestore data after login:');
         debugPrint(cloudData == null ? 'No data found.' : cloudData.toString());
         if (cloudData != null) {
-          // Restore scan history
           if (cloudData['scanHistory'] is List && scanHistoryRepo is ScanHistoryRepositoryImpl) {
             final scanList = (cloudData['scanHistory'] as List)
                 .map((e) => ScanResult.fromJson(Map<String, dynamic>.from(e)))
                 .toList();
-            // Sort by timestamp ascending (earliest first)
             scanList.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-            // Save to local storage
             await scanHistoryRepo.clearHistory();
             for (final scan in scanList) {
               await scanHistoryRepo.addScan(scan);
             }
-            // Notify ScanViewModel to refresh UI and fire callback
-            // Using the public refresh method
             scanViewModel.refreshAfterRestore();
           }
-          // Restore dietary preferences
           if (cloudData['dietaryPreferences'] is List) {
             final restrictions = (cloudData['dietaryPreferences'] as List)
                 .map((e) => DietaryRestriction.values.firstWhere(
@@ -341,27 +315,24 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
     }();
   }
 
+  /// Builds the widget tree for onboarding and main navigation.
   @override
   Widget build(BuildContext context) {
     final currentUserId = widget.userId;
 
-    // Update user-specific data when user changes
     if (currentUserId != _lastUserId) {
       _lastUserId = currentUserId;
-      // Schedule service updates after build completes
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _updateUserServices(currentUserId);
       });
     }
 
-    // Show loading while checking onboarding status
     if (_onboardingComplete == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // Show onboarding for first-time users (after login)
     if (!_onboardingComplete!) {
       return OnboardingPage(
         userId: currentUserId,
@@ -373,7 +344,6 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
       );
     }
 
-    // Show main app for users who completed onboarding
     return const MainNavigation();
   }
 }

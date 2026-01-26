@@ -48,6 +48,7 @@ class _AddFoodPageState extends State<AddFoodPage> {
         return MealBuilderPage(
           embedded: true,
           onBack: _showSelection,
+          hideQuickAdd: true,
         );
       case _AddFoodView.restaurantMenu:
         return _RestaurantMenuEmbedded(onBack: _showSelection);
@@ -146,30 +147,28 @@ class _AddFoodPageState extends State<AddFoodPage> {
 
                       const SizedBox(height: 16),
 
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Divider(
-                              color: isDark ? Colors.white24 : Colors.black12,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              'OR',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: isDark ? Colors.white38 : Colors.black38,
+                      _buildOptionCard(
+                        context: context,
+                        icon: Icons.qr_code_2,
+                        emoji: '📱',
+                        title: 'Scan or Search Products',
+                        subtitle: 'Search ingredients and track packaged products',
+                        description:
+                            'Find nutrition info for packaged foods and brands',
+                        color: const Color(0xFF4A90E2),
+                        isDark: isDark,
+                        onTap: () {
+                          // Navigate with hideIngredientSearch enabled
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MealBuilderPage(
+                                embedded: false,
+                                hideIngredientSearch: true,
                               ),
                             ),
-                          ),
-                          Expanded(
-                            child: Divider(
-                              color: isDark ? Colors.white24 : Colors.black12,
-                            ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 16),

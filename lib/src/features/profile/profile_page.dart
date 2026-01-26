@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:vitasnap/src/domain/repositories/user_repository.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/health_conditions_service.dart';
 import '../../core/strings.dart';
@@ -50,33 +51,24 @@ class ProfilePage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // Avatar
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: primaryColor.withValues(alpha: 0.1),
-                    child: Text(
-                      'G',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: primaryColor,
-                      ),
-                    ),
-                  ),
+             
                   const SizedBox(height: 16),
 
-                  // Name
-                  const Text(
-                    'Guest User',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+
+                  // Name (local user)
+                  FutureBuilder<String?>(
+                    future: context.read<UserRepository>().getUserName(),
+                    builder: (context, snapshot) {
+                      final name = snapshot.data ?? AppStrings.defaultUserName;
+                      return Text(
+                        name,
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      );
+                    },
                   ),
                   const SizedBox(height: 4),
 
-                  // Subtitle
-                  Text(
-                    'Your data is stored locally',
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                  ),
+              
                 ],
               ),
             ),

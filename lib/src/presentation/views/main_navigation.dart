@@ -1,15 +1,17 @@
-import 'package:flutter/material.dart';
 
+import 'package:flutter/material.dart';
 import 'home_dashboard.dart';
 import 'favorites_page.dart';
 import 'add_food_page.dart';
 import '../../features/profile/profile_page.dart';
+import 'navigation_labels/navigation_labels.dart';
 
-/// Main navigation wrapper with bottom navigation bar
+
+/// Main navigation wrapper with bottom navigation bar.
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
-  /// Navigate to home tab from anywhere in the widget tree
+  /// Navigate to home tab from anywhere in the widget tree.
   static void navigateToHome(BuildContext context) {
     final state = context.findAncestorStateOfType<MainNavigationState>();
     state?.navigateToTab(0);
@@ -19,6 +21,8 @@ class MainNavigation extends StatefulWidget {
   State<MainNavigation> createState() => MainNavigationState();
 }
 
+
+/// State for MainNavigation, manages tab navigation and bottom navigation bar.
 class MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
@@ -32,14 +36,13 @@ class MainNavigationState extends State<MainNavigation> {
   @override
   void initState() {
     super.initState();
-    // Reset index to 0 when the widget is created (e.g., after login)
     _currentIndex = 0;
   }
 
-  /// Get safe current index (ensure it's within bounds)
+  /// Returns the current tab index, clamped to valid range.
   int get _safeIndex => _currentIndex.clamp(0, _pages.length - 1);
 
-  /// Navigate to a specific tab by index
+  /// Navigates to a specific tab by index.
   void navigateToTab(int index) {
     if (index >= 0 && index < _pages.length) {
       setState(() {
@@ -48,7 +51,7 @@ class MainNavigationState extends State<MainNavigation> {
     }
   }
 
-  /// Navigate to home tab (index 0)
+  /// Navigates to the home tab (index 0).
   void navigateToHome() => navigateToTab(0);
 
   @override
@@ -88,7 +91,7 @@ class MainNavigationState extends State<MainNavigation> {
                 color: currentIdx == 0 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
               ),
               selectedIcon: Icon(Icons.home, color: primaryColor),
-              label: 'Home',
+              label: NavigationLabels.home,
             ),
             NavigationDestination(
               icon: Icon(
@@ -96,7 +99,7 @@ class MainNavigationState extends State<MainNavigation> {
                 color: currentIdx == 1 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
               ),
               selectedIcon: Icon(Icons.add_circle, color: primaryColor),
-              label: 'Add Meal',
+              label: NavigationLabels.addMeal,
             ),
             NavigationDestination(
               icon: Icon(
@@ -104,7 +107,7 @@ class MainNavigationState extends State<MainNavigation> {
                 color: currentIdx == 2 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
               ),
               selectedIcon: Icon(Icons.favorite, color: primaryColor),
-              label: 'Favorites',
+              label: NavigationLabels.favorites,
             ),
             NavigationDestination(
               icon: Icon(
@@ -112,7 +115,7 @@ class MainNavigationState extends State<MainNavigation> {
                 color: currentIdx == 3 ? primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
               ),
               selectedIcon: Icon(Icons.person, color: primaryColor),
-              label: 'Profile',
+              label: NavigationLabels.profile,
             ),
           ],
         ),

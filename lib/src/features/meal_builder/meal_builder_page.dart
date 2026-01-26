@@ -34,7 +34,19 @@ class MealBuilderPage extends StatefulWidget {
   /// Callback when back is pressed in embedded mode
   final VoidCallback? onBack;
 
-  const MealBuilderPage({super.key, this.embedded = false, this.onBack});
+  /// If true, hides the ingredient search UI (for scan/search entry)
+  final bool hideIngredientSearch;
+
+  /// If true, hides the Quick Add card (for building meal entry)
+  final bool hideQuickAdd;
+
+  const MealBuilderPage({
+    super.key,
+    this.embedded = false,
+    this.onBack,
+    this.hideIngredientSearch = false,
+    this.hideQuickAdd = false,
+  });
 
   @override
   State<MealBuilderPage> createState() => _MealBuilderPageState();
@@ -1472,109 +1484,114 @@ class _MealBuilderPageState extends State<MealBuilderPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Search Box
-                    Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Theme.of(
-                            context,
-                          ).primaryColor.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.search,
-                            size: 20,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextField(
-                              controller: _apiSearchController,
-                              decoration: InputDecoration(
-                                hintText:
-                                    'Search ingredients or products (e.g., egg, rice, Coca Cola)',
-                                hintStyle: TextStyle(
-                                  fontSize: 14,
-                                  color: isDark
-                                      ? Colors.white38
-                                      : Colors.black38,
-                                ),
-                                border: InputBorder.none,
-                                isDense: true,
-                              ),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDark ? Colors.white : Colors.black87,
-                              ),
-                              textInputAction: TextInputAction.search,
-                              onSubmitted: (_) => _performApiSearch(viewModel),
-                              onChanged: (value) {
-                                setState(
-                                  () {},
-                                ); // Rebuild to update clear button
-                                if (value.isEmpty) {
-                                  viewModel.clearSearchResults();
-                                }
-                              },
-                            ),
-                          ),
-                          if (viewModel.isSearching)
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          else if (_apiSearchController.text.isNotEmpty)
-                            IconButton(
-                              icon: const Icon(Icons.close, size: 20),
-                              onPressed: () {
-                                _apiSearchController.clear();
-                                viewModel.clearSearchResults();
-                                setState(() {});
-                              },
-                              color: isDark ? Colors.white54 : Colors.black45,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            )
-                          else
-                            IconButton(
-                              icon: const Icon(Icons.search, size: 22),
-                              onPressed: () {
-                                FocusScope.of(context).unfocus();
-                                _performApiSearch(viewModel);
-                              },
-                              color: Theme.of(context).primaryColor,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Meal Type Tabs
+                    // Meal Type Tabs - always shown
                     MealTypeTabs(
                       selectedType: viewModel.selectedMealType,
                       onTypeSelected: viewModel.setMealType,
                     ),
+
+                    const SizedBox(height: 16),
+
+                    // Search Box - hidden when hideIngredientSearch is true
+                    if (!widget.hideIngredientSearch) ...[
+                      Container(
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.search,
+                              size: 20,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _apiSearchController,
+                                decoration: InputDecoration(
+                                  hintText:
+                                      'Search ingredients or products (e.g., egg, rice, Coca Cola)',
+                                  hintStyle: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark
+                                        ? Colors.white38
+                                        : Colors.black38,
+                                  ),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                                textInputAction: TextInputAction.search,
+                                onSubmitted: (_) => _performApiSearch(viewModel),
+                                onChanged: (value) {
+                                  setState(
+                                    () {},
+                                  ); // Rebuild to update clear button
+                                  if (value.isEmpty) {
+                                    viewModel.clearSearchResults();
+                                  }
+                                },
+                              ),
+                            ),
+                            if (viewModel.isSearching)
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            else if (_apiSearchController.text.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(Icons.close, size: 20),
+                                onPressed: () {
+                                  _apiSearchController.clear();
+                                  viewModel.clearSearchResults();
+                                  setState(() {});
+                                },
+                                color: isDark ? Colors.white54 : Colors.black45,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              )
+                            else
+                              IconButton(
+                                icon: const Icon(Icons.search, size: 22),
+                                onPressed: () {
+                                  FocusScope.of(context).unfocus();
+                                  _performApiSearch(viewModel);
+                                },
+                                color: Theme.of(context).primaryColor,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                   ],
                 ),
               ),
             ),
 
-            // Quick Add Section - Scan or Search Products
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                child: _buildQuickAddCard(isDark, cardColor),
+            // Quick Add Section - Scan or Search Products (hide if requested)
+            if (!widget.hideQuickAdd)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                  child: _buildQuickAddCard(isDark, cardColor),
+                ),
               ),
-            ),
 
             // Current Recipe Card (My Breakfast/Lunch/etc)
             SliverToBoxAdapter(
